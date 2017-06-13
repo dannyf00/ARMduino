@@ -142,7 +142,7 @@ void mcu_init(void){
 	//configure Systick as the time base for millis()/micros()
 	timer_ticks = 1ul<<24;											//SysTick is a 24-bit downcounter
 	//for chips where SysTick_Config() is not defined in cmsis
-	SysTick->LOAD  = 	(0xfffffful/*ticks*/ & SysTick_LOAD_RELOAD_Msk) - 1;      /* set reload register */
+	SysTick->LOAD  = 	(timer_ticks - 1)/*ticks*/ & SysTick_LOAD_RELOAD_Msk;      /* set reload register */
 	NVIC_SetPriority 	(SysTick_IRQn, (1<<__NVIC_PRIO_BITS) - 1);  /* set Priority for Systick Interrupt */
 	SysTick->VAL   = 	0;                                          /* Load the SysTick Counter Value */
 	SysTick->CTRL  = 	SysTick_CTRL_CLKSOURCE_Msk |
