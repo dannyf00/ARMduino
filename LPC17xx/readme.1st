@@ -1,2 +1,7 @@
 Armduino for LPC17xx, tested on LPC1768.
 
+Most functions are implemented, except serial comm, analogRead and analogWrite.
+
+GPIO mode supports only INPUT and OUTPUT.
+
+Should be quite portable to older LPC21xx series, if you repurpose one of the timers as systick.
