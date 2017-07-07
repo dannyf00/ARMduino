@@ -4,6 +4,7 @@ So far, only the GPIO and generic Arduino functions are ported over. No hardware
 
 the simple blinky compiles to about 2KB with optimization and 3KB without.
 
+edit1: 
 Most functions are supported now: major exception is analogWrite().
 
 Added supported for periodic timers: TIM1/2/3/14/15/16/17. note that not all chips have t hose peripherals.
