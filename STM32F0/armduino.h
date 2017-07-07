@@ -1,6 +1,9 @@
 //ARMduino port for ARM family of Cortex-M chips
 //software environment: gcc-arm
 //
+//version: v0.11b @ 7/7/2017
+//renamed timer_ticks to systickovf_counter
+//
 //version: v0.11a @6/4/2017
 //fixed a minor error in systick initialization
 //

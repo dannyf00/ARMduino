@@ -13,43 +13,44 @@ typedef struct {
 	uint16_t mask;						//pin mask - 16bit
 } PIN2GPIO;
 
-
 //empty handler
 static void empty_handler(void) {
 	//do nothing here
 }
 
-#if defined(USE_EXTI)
 //user isr
 void (*_isrptr_exti[16])(void);			//user handler for EXTI interrupt
 
 //exti interrupt handlers
-void EXTI0_IRQHandler(void) {
-	EXTI->PR |= (1<<0);					//clear the flag by writing '1' to it
-	_isrptr_exti[0]();					//execute the user handler
+void EXTI0_1_IRQHandler(void) {
+	if (EXTI->PR & (1<<0)) {
+		EXTI->PR |= (1<<0);				//clear the flag by writing '1' to it
+		_isrptr_exti[0]();				//execute the user handler
+	}
+
+	if (EXTI->PR & (1<<1)) {
+		EXTI->PR |= (1<<1);				//clear the flag by writing '1' to it
+		_isrptr_exti[1]();				//execute the user handler
+	}
 }
 
-void EXTI1_IRQHandler(void) {
-	EXTI->PR |= (1<<1);					//clear the flag by writing '1' to it
-	_isrptr_exti[1]();					//execute the user handler
+void EXTI2_3_IRQHandler(void) {
+	if (EXTI->PR & (1<<2)) {
+		EXTI->PR |= (1<<2);				//clear the flag by writing '1' to it
+		_isrptr_exti[2]();				//execute the user handler
+	}
+	if (EXTI->PR & (1<<3)) {
+		EXTI->PR |= (1<<3);				//clear the flag by writing '1' to it
+		_isrptr_exti[3]();				//execute the user handler
+	}
 }
 
-void EXTI2_IRQHandler(void) {
-	EXTI->PR |= (1<<2);					//clear the flag by writing '1' to it
-	_isrptr_exti[2]();					//execute the user handler
-}
+void EXTI4_15IRQHandler(void) {
+	if (EXTI->PR & (1<<4)) {
+		EXTI->PR |= (1<<4);				//clear the flag by writing '1' to it
+		_isrptr_exti[4]();				//execute the user handler
+	}
 
-void EXTI3_IRQHandler(void) {
-	EXTI->PR |= (1<<3);					//clear the flag by writing '1' to it
-	_isrptr_exti[3]();					//execute the user handler
-}
-
-void EXTI4_IRQHandler(void) {
-	EXTI->PR |= (1<<4);					//clear the flag by writing '1' to it
-	_isrptr_exti[4]();					//execute the user handler
-}
-
-void EXTI9_5_IRQHandler(void) {
 	if (EXTI->PR & (1<<5)) {
 		EXTI->PR |= (1<<5);				//clear the flag by writing '1' to it
 		_isrptr_exti[5]();				//execute the user handler
@@ -74,9 +75,7 @@ void EXTI9_5_IRQHandler(void) {
 		EXTI->PR |= (1<<9);				//clear the flag by writing '1' to it
 		_isrptr_exti[9]();				//execute the user handler
 	}
-}
 
-void EXTI15_10_IRQHandler(void) {
 	if (EXTI->PR & (1<<10)) {
 		EXTI->PR |= (1<<10);			//clear the flag by writing '1' to it
 		_isrptr_exti[10]();				//execute the user handler
@@ -107,7 +106,185 @@ void EXTI15_10_IRQHandler(void) {
 		_isrptr_exti[15]();				//execute the user handler
 	}
 }
+
 //end exti handlers
+
+//timer handlers
+#if defined(USE_TIM1)
+//global variables
+static void (* _tim1_oc1isrptr)(void)=empty_handler;				//tim1_ptr pointing to empty_handler by default
+static void (* _tim1_oc2isrptr)(void)=empty_handler;				//tim1_ptr pointing to empty_handler by default
+static void (* _tim1_oc3isrptr)(void)=empty_handler;				//tim1_ptr pointing to empty_handler by default
+static void (* _tim1_oc4isrptr)(void)=empty_handler;				//tim1_ptr pointing to empty_handler by default
+
+static uint32_t _tim1_oc1=0;				//output compare registers
+static uint32_t _tim1_oc2=0;
+static uint32_t _tim1_oc3=0;
+static uint32_t _tim1_oc4=0;
+
+//isr for timer1 capture / compare
+void TIM1_CC_IRQHandler(void) {
+	//oc1 portion
+	if (TIM1->SR & TIM_SR_CC1IF) {		//output compare 1 flag is set
+		TIM1->SR &=~TIM_SR_CC1IF;		//clear the flag
+		TIM1->CCR1 += _tim1_oc1;			//update the output compare register
+		_tim1_oc1isrptr();				//execute user handler
+	}
+
+	//oc2 portion
+	if (TIM1->SR & TIM_SR_CC2IF) {		//output compare 2 flag is set
+		TIM1->SR &=~TIM_SR_CC2IF;		//clear the flag
+		TIM1->CCR2 += _tim1_oc2;			//update the output compare register
+		_tim1_oc2isrptr();				//execute user handler
+	}
+
+	//oc3 portion
+	if (TIM1->SR & TIM_SR_CC3IF) {		//output compare 2 flag is set
+		TIM1->SR &=~TIM_SR_CC3IF;		//clear the flag
+		TIM1->CCR3 += _tim1_oc3;			//update the output compare register
+		_tim1_oc3isrptr();				//execute user handler
+	}
+
+	//oc4 portion
+	if (TIM1->SR & TIM_SR_CC4IF) {		//output compare 2 flag is set
+		TIM1->SR &=~TIM_SR_CC4IF;		//clear the flag
+		TIM1->CCR4 += _tim1_oc4;			//update the output compare register
+		_tim1_oc4isrptr();				//execute user handler
+	}
+}
+#endif
+//TIM2 not present on all chips
+#if defined(USE_TIM2)
+//global variables
+static void (* _tim2_oc1isrptr)(void)=empty_handler;				//tim2_ptr pointing to empty_handler by default
+static void (* _tim2_oc2isrptr)(void)=empty_handler;				//tim2_ptr pointing to empty_handler by default
+static void (* _tim2_oc3isrptr)(void)=empty_handler;				//tim2_ptr pointing to empty_handler by default
+static void (* _tim2_oc4isrptr)(void)=empty_handler;				//tim2_ptr pointing to empty_handler by default
+
+static uint32_t _tim2_oc1=0;				//output compare registers
+static uint32_t _tim2_oc2=0;
+static uint32_t _tim2_oc3=0;
+static uint32_t _tim2_oc4=0;
+
+//isr for timer1 capture / compare
+void TIM2_IRQHandler(void) {
+	//oc1 portion
+	if (TIM2->SR & TIM_SR_CC1IF) {		//output compare 1 flag is set
+		TIM2->SR &=~TIM_SR_CC1IF;		//clear the flag
+		TIM2->CCR1 += _tim2_oc1;			//update the output compare register
+		_tim2_oc1isrptr();				//execute user handler
+	}
+
+	//oc2 portion
+	if (TIM2->SR & TIM_SR_CC2IF) {		//output compare 2 flag is set
+		TIM2->SR &=~TIM_SR_CC2IF;		//clear the flag
+		TIM2->CCR2 += _tim2_oc2;			//update the output compare register
+		_tim2_oc2isrptr();				//execute user handler
+	}
+
+	//oc3 portion
+	if (TIM2->SR & TIM_SR_CC3IF) {		//output compare 2 flag is set
+		TIM2->SR &=~TIM_SR_CC3IF;		//clear the flag
+		TIM2->CCR3 += _tim2_oc3;			//update the output compare register
+		_tim2_oc3isrptr();				//execute user handler
+	}
+
+	//oc4 portion
+	if (TIM2->SR & TIM_SR_CC4IF) {		//output compare 2 flag is set
+		TIM2->SR &=~TIM_SR_CC4IF;		//clear the flag
+		TIM2->CCR4 += _tim2_oc4;			//update the output compare register
+		_tim2_oc4isrptr();				//execute user handler
+	}
+}
+#endif
+
+#if defined(USE_TIM3)
+//global variables
+static void (* _tim3_oc1isrptr)(void)=empty_handler;				//tim3_ptr pointing to empty_handler by default
+static void (* _tim3_oc2isrptr)(void)=empty_handler;				//tim3_ptr pointing to empty_handler by default
+static void (* _tim3_oc3isrptr)(void)=empty_handler;				//tim3_ptr pointing to empty_handler by default
+static void (* _tim3_oc4isrptr)(void)=empty_handler;				//tim3_ptr pointing to empty_handler by default
+
+static uint32_t _tim3_oc1=0;				//output compare registers
+static uint32_t _tim3_oc2=0;
+static uint32_t _tim3_oc3=0;
+static uint32_t _tim3_oc4=0;
+
+//isr for timer1 capture / compare
+void TIM3_IRQHandler(void) {
+	//oc1 portion
+	if (TIM3->SR & TIM_SR_CC1IF) {		//output compare 1 flag is set
+		TIM3->SR &=~TIM_SR_CC1IF;		//clear the flag
+		TIM3->CCR1 += _tim3_oc1;			//update the output compare register
+		_tim3_oc1isrptr();				//execute user handler
+	}
+
+	//oc2 portion
+	if (TIM3->SR & TIM_SR_CC2IF) {		//output compare 2 flag is set
+		TIM3->SR &=~TIM_SR_CC2IF;		//clear the flag
+		TIM3->CCR2 += _tim3_oc2;			//update the output compare register
+		_tim3_oc2isrptr();				//execute user handler
+	}
+
+	//oc3 portion
+	if (TIM3->SR & TIM_SR_CC3IF) {		//output compare 2 flag is set
+		TIM3->SR &=~TIM_SR_CC3IF;		//clear the flag
+		TIM3->CCR3 += _tim3_oc3;			//update the output compare register
+		_tim3_oc3isrptr();				//execute user handler
+	}
+
+	//oc4 portion
+	if (TIM3->SR & TIM_SR_CC4IF) {		//output compare 2 flag is set
+		TIM3->SR &=~TIM_SR_CC4IF;		//clear the flag
+		TIM3->CCR4 += _tim3_oc4;			//update the output compare register
+		_tim3_oc4isrptr();				//execute user handler
+	}
+}
+#endif
+
+#if defined(USE_TIM14)
+//global variables
+static void (* _tim14_isrptr)(void)=empty_handler;				//tim4_ptr pointing to empty_handler by default
+
+//isr for timer1 capture / compare
+void TIM14_IRQHandler(void) {
+	TIM14->SR &=~TIM_SR_UIF;		//clear the flag
+	_tim14_isrptr();				//execute user handler
+}
+#endif
+
+//TIM15 not present on all chips
+#if defined(USE_TIM15)
+//global variables
+static void (* _tim15_isrptr)(void)=empty_handler;				//tim4_ptr pointing to empty_handler by default
+
+//isr for timer1 capture / compare
+void TIM15_IRQHandler(void) {
+	TIM15->SR &=~TIM_SR_UIF;		//clear the flag
+	_tim15_isrptr();				//execute user handler
+}
+#endif
+
+#if defined(USE_TIM16)
+//global variables
+static void (* _tim16_isrptr)(void)=empty_handler;				//tim4_ptr pointing to empty_handler by default
+
+//isr for timer1 capture / compare
+void TIM16_IRQHandler(void) {
+	TIM16->SR &=~TIM_SR_UIF;		//clear the flag
+	_tim16_isrptr();				//execute user handler
+}
+#endif
+
+#if defined(USE_TIM17)
+//global variables
+static void (* _tim17_isrptr)(void)=empty_handler;				//tim4_ptr pointing to empty_handler by default
+
+//isr for timer1 capture / compare
+void TIM17_IRQHandler(void) {
+	TIM17->SR &=~TIM_SR_UIF;		//clear the flag
+	_tim17_isrptr();				//execute user handler
+}
 #endif
 
 //global variables
@@ -271,13 +448,13 @@ inline void pinMode(PIN_TypeDef pin, uint8_t mode) {
 	//additional features commented out
 	switch (mode) {
 	case INPUT: 		GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_INFL); break;			//floating input
-	case INPUT_PULLUP: 	GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_INPU); IO_SET(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask); break;			//input with pullup
-	//case INPUT_PULLDN:	GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_INDN); GIO_CLR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask); break;			//input with pulldown
-	//case INPUT_ANALOG:	GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_INAN); break;			//analog input
+	case INPUT_PULLUP: 	GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_INPU); /*IO_SET(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask); */break;			//input with pullup
+	case INPUT_PULLDN:	GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_INPD); /*IO_CLR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask); */break;			//input with pulldown
+	case INPUT_ANALOG:	GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_INAN); break;			//analog input
 	case OUTPUT:		GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_OUTPP); break;			//floating input
-	//case OUTPUT_OD:		GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_OUTOD); break;			//floating input
-	//case OUTPUT_AFPP:	GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_AFPP); break;			//floating input
-	//case OUTPUT_AFOD:	GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_AFOD); break;			//floating input
+	case OUTPUT_OD:		GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_OUTOD); break;			//floating input
+	case OUTPUT_AFPP:	GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_AFPP); break;			//floating input
+	case OUTPUT_AFOD:	GPIO_DDR(GPIO_PinDef[pin].gpio, GPIO_PinDef[pin].mask, GPIOMODE_AFOD); break;			//floating input
 	default: break;			//do nothing
 	}
 
@@ -299,7 +476,7 @@ inline int digitalRead(PIN_TypeDef pin) {
 //analogWrite
 void analogWrite(PIN_TypeDef pin, uint16_t dc) {
 	dc=(dc>PWM_PR)?PWM_PR:dc;				//bound dc to [0..PWM_PR]
-	switch (pin) {							//configure TIMx-OCi channels based on pin # -> for STM32F100
+	switch (pin) {							//configure TIM2-OCi channels based on pin # -> for STM32F100
 #if defined(TIM1)
 	case PA8:									//pin 8 = PA8/TIM1-CH1
 		GIO_AFPP(GPIO_PinDef[8].gpio, GPIO_PinDef[8].mask);
@@ -389,25 +566,6 @@ void analogWrite(PIN_TypeDef pin, uint16_t dc) {
 }
 #endif										//pwm
 
-#if defined(USE_DAC)
-//extended function
-//output a 12-bit value on DACn ch 1
-//DAC1 = PA4 = Pin 4
-void DAC1Write(uint16_t val) {
-	GIO_AFPP(GPIO_PinDef[4].gpio, GPIO_PinDef[4].mask);	//configure pin 4 as afio output
-	DAC->DHR12R1 = val & 0x0ffful;			//bound the value to [0..4095]
-	DAC->SWTRIGR|= (1<<0);					//output on DAC1 - cleared by hardware
-}
-
-//output a 12-bit value on DACn ch 2
-//DAC2 = PA5 = Pin 5
-void DAC2Write(uint16_t val) {
-	GIO_AFPP(GPIO_PinDef[5].gpio, GPIO_PinDef[5].mask);	//configure pin 5 as afio output
-	DAC->DHR12R2 = val & 0x0ffful;			//bound the value to [0..4095]
-	DAC->SWTRIGR|= (1<<1);					//output on DAC2 - cleared by hardware
-}
-#endif										//dac
-
 #if defined(USE_ADC1)
 //analog to digital converter on ADC1
 //ain/analog input channel: ain valid values: 0..15, 16=temperature sensor, 17=Vrefint
@@ -416,14 +574,13 @@ uint16_t analogRead(AIN_TypeDef ain) {
 	ADC1->ISR &= ~(1<<2);					//clear the eoc flag
 	//ADC1->CR1 = (ADC1->CR1 &~0x1f) | (ain & 0x1f);	//pick the adc channel
 	//ADC1->CR2|= (1<<0);					//start the conversion
-	ADC1->CHSELR = ain & 0x03fffful;		//define the first (and only) adc ch
+	ADC1->CHSELR = (1ul<<ain) & 0x03fffful;		//define the first (and only) adc ch
 	ADC1->CR |= (1<<2);						//start conversion
 	while ((ADC1->ISR & (1<<2)) == 0) continue;	//wait for conversion to end (EOC set at end of conversion)
 	return ADC1->DR;						//return adc result and clears the EOC bit
 }
 #endif										//adc1
 
-#if defined(USE_EXTI)
 //attach an exti
 //pin 0..15
 void attachInterrupt(PIN_TypeDef pin, void (*isrptr)(void), uint8_t mode) {
@@ -447,39 +604,39 @@ void attachInterrupt(PIN_TypeDef pin, void (*isrptr)(void), uint8_t mode) {
     //not pos has the pin position
 
     //figure out the line 0..15
-         if (pos < 4) AFIO->EXTICR[0] = (AFIO->EXTICR[0] &~(0x0f << (4*(pos- 0)))) | (mask << (4*(pos - 0)));  //set the line 0..4
-    else if (pos < 8) AFIO->EXTICR[1] = (AFIO->EXTICR[1] &~(0x0f << (4*(pos- 4)))) | (mask << (4*(pos - 4)));  //set the line 5..8
-    else if (pos <12) AFIO->EXTICR[2] = (AFIO->EXTICR[2] &~(0x0f << (4*(pos- 8)))) | (mask << (4*(pos - 8)));  //set the line 9..12
-    else if (pos <16) AFIO->EXTICR[3] = (AFIO->EXTICR[3] &~(0x0f << (4*(pos-12)))) | (mask << (4*(pos -12)));  //set the line 13..16
+         if (pos < 4) SYSCFG->EXTICR[0] = (SYSCFG->EXTICR[0] &~(0x0f << (4*(pos- 0)))) | (mask << (4*(pos - 0)));  //set the line 0..4
+    else if (pos < 8) SYSCFG->EXTICR[1] = (SYSCFG->EXTICR[1] &~(0x0f << (4*(pos- 4)))) | (mask << (4*(pos - 4)));  //set the line 5..8
+    else if (pos <12) SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] &~(0x0f << (4*(pos- 8)))) | (mask << (4*(pos - 8)));  //set the line 9..12
+    else if (pos <16) SYSCFG->EXTICR[3] = (SYSCFG->EXTICR[3] &~(0x0f << (4*(pos-12)))) | (mask << (4*(pos -12)));  //set the line 13..16
 
     //figure out the trigger: rising or falling
     switch (mode) {
     case CHANGE:	EXTI->FTSR |= (1<<pos); EXTI->RTSR |= (1<<pos); break;		//set falling trigger
-    case RISING: 	EXTI->RTSR |= (1<<pos); break;		//set rising trigger
+    case RISING: 	EXTI->FTSR &=~(1<<pos); EXTI->RTSR |= (1<<pos); break;		//set rising trigger
     case FALLING:
-    default: 		EXTI->FTSR |= (1<<pos); break;		//set falling trigger (default)
+    default: 		EXTI->FTSR |= (1<<pos); EXTI->RTSR &=~(1<<pos); break;		//set falling trigger (default)
     }
 
     //install the user handler
 	_isrptr_exti[pos] = isrptr;
 	//set it to the lowest priority
     switch (pos) {
-    case 0: NVIC_SetPriority(EXTI0_IRQn, 15); NVIC_EnableIRQ(EXTI0_IRQn); break;
-    case 1: NVIC_SetPriority(EXTI1_IRQn, 15); NVIC_EnableIRQ(EXTI1_IRQn); break;
-    case 2: NVIC_SetPriority(EXTI2_IRQn, 15); NVIC_EnableIRQ(EXTI2_IRQn); break;
-    case 3: NVIC_SetPriority(EXTI3_IRQn, 15); NVIC_EnableIRQ(EXTI3_IRQn); break;
-    case 4: NVIC_SetPriority(EXTI4_IRQn, 15); NVIC_EnableIRQ(EXTI4_IRQn); break;
+    case 0:
+    case 1: NVIC_SetPriority(EXTI0_1_IRQn, 15); NVIC_EnableIRQ(EXTI0_1_IRQn); break;
+    case 2:
+    case 3: NVIC_SetPriority(EXTI2_3_IRQn, 15); NVIC_EnableIRQ(EXTI2_3_IRQn); break;
+    case 4:
     case 5:
     case 6:
     case 7:
     case 8:
-    case 9: NVIC_SetPriority(EXTI9_5_IRQn, 15); NVIC_EnableIRQ(EXTI9_5_IRQn); break;
+    case 9:
     case 10:
     case 11:
     case 12:
     case 13:
     case 14:
-    case 15: NVIC_SetPriority(EXTI15_10_IRQn, 15); NVIC_EnableIRQ(EXTI15_10_IRQn); break;
+    case 15: NVIC_SetPriority(EXTI4_15_IRQn, 15); NVIC_EnableIRQ(EXTI4_15_IRQn); break;
     default: break;		//do nothing
     }
 
@@ -510,35 +667,39 @@ void detachInterrupt(PIN_TypeDef pin) {
     //not pos has the pin position
 
     //figure out the line 0..16
-    //     if (pos <= 4) AFIO->EXTICR[0] = (AFIO->EXTICR[0] &~(0x0f << (pos- 0))) | (mask << (pos - 0));  //set the line 0..4
-    //else if (pos <= 8) AFIO->EXTICR[1] = (AFIO->EXTICR[1] &~(0x0f << (pos- 4))) | (mask << (pos - 4));  //set the line 5..8
-    //else if (pos <=12) AFIO->EXTICR[2] = (AFIO->EXTICR[2] &~(0x0f << (pos- 8))) | (mask << (pos - 8));  //set the line 9..12
-    //else if (pos <=16) AFIO->EXTICR[3] = (AFIO->EXTICR[3] &~(0x0f << (pos-12))) | (mask << (pos -12));  //set the line 13..16
+    //     if (pos <= 4) SYSCFG->EXTICR[0] = (SYSCFG->EXTICR[0] &~(0x0f << (pos- 0))) | (mask << (pos - 0));  //set the line 0..4
+    //else if (pos <= 8) SYSCFG->EXTICR[1] = (SYSCFG->EXTICR[1] &~(0x0f << (pos- 4))) | (mask << (pos - 4));  //set the line 5..8
+    //else if (pos <=12) SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] &~(0x0f << (pos- 8))) | (mask << (pos - 8));  //set the line 9..12
+    //else if (pos <=16) SYSCFG->EXTICR[3] = (SYSCFG->EXTICR[3] &~(0x0f << (pos-12))) | (mask << (pos -12));  //set the line 13..16
 
     //figure out the trigger: rising or falling
-    //if (mode & EDGE_RISING) EXTI->RTSR |= (1<<pos);  //set rising trigger
-    //if (mode & EDGE_FALLING) EXTI->FTSR |= (1<<pos);    //set falling trigger
+    //switch (mode) {
+    //case CHANGE:	EXTI->FTSR |= (1<<pos); EXTI->RTSR |= (1<<pos); break;		//set falling trigger
+    //case RISING: 	EXTI->RTSR |= (1<<pos); break;		//set rising trigger
+    //case FALLING:
+    //default: 		EXTI->FTSR |= (1<<pos); break;		//set falling trigger (default)
+    //}
 
     //install the default handler
 	_isrptr_exti[pos] = empty_handler;					//isrptr;
 	//set it to the lowest priority, and disable the IRQ
     switch (pos) {
-    case 0: NVIC_SetPriority(EXTI0_IRQn, 15); NVIC_DisableIRQ(EXTI0_IRQn); break;
-    case 1: NVIC_SetPriority(EXTI1_IRQn, 15); NVIC_DisableIRQ(EXTI1_IRQn); break;
-    case 2: NVIC_SetPriority(EXTI2_IRQn, 15); NVIC_DisableIRQ(EXTI2_IRQn); break;
-    case 3: NVIC_SetPriority(EXTI3_IRQn, 15); NVIC_DisableIRQ(EXTI3_IRQn); break;
-    case 4: NVIC_SetPriority(EXTI4_IRQn, 15); NVIC_DisableIRQ(EXTI4_IRQn); break;
+    case 0:
+    case 1: NVIC_SetPriority(EXTI0_1_IRQn, 15); NVIC_DisableIRQ(EXTI0_1_IRQn); break;
+    case 2:
+    case 3: NVIC_SetPriority(EXTI2_3_IRQn, 15); NVIC_DisableIRQ(EXTI2_3_IRQn); break;
+    case 4:
     case 5:
     case 6:
     case 7:
     case 8:
-    case 9: NVIC_SetPriority(EXTI9_5_IRQn, 15); NVIC_DisableIRQ(EXTI9_5_IRQn); break;
+    case 9:
     case 10:
     case 11:
     case 12:
     case 13:
     case 14:
-    case 15: NVIC_SetPriority(EXTI15_10_IRQn, 15); NVIC_DisableIRQ(EXTI15_10_IRQn); break;
+    case 15: NVIC_SetPriority(EXTI4_15_IRQn, 15); NVIC_DisableIRQ(EXTI4_15_IRQn); break;
     default: break;		//do nothing
     }
 
@@ -546,7 +707,6 @@ void detachInterrupt(PIN_TypeDef pin) {
     EXTI->PR |= (1<<pos);                           //clear the flag
     EXTI->IMR &=~(1<<pos);                          //disable the exti
 }
-#endif												//exti
 
 #if defined(USE_SPI1)
 //spi routines
@@ -617,278 +777,1001 @@ uint8_t SPI2Read(uint8_t order) {
 #if defined(USE_UART1)
 //initialize uart1
 void serial1Begin(uint32_t baudrate) {
-    //configure uart1
+	uint16_t uartdiv;
+
+	//configure uart1
     //route clock to uart1
     RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 
-    USART1->CR1 &=~(1<<13);			//'0'->disable uart, '1'->enable uart
-    USART1->CR1 = 	(0<<15) |		//'0'->oversample by 16, '1'->oversample by 8
-    				(0<<13) |		//'0'->disable uart, '1'->enable uart
-    				(0<<12) |		//'0'->1 start bit, 8 data bit, n stop bit, '1'->1 start bit, 9 data bit, n stop bit
-    				(0<<11) |		//'0'->idle line, '1'->wake by address
-    				(0<<10) |		//'0'->disable parity, '1'->enable parity
-    				(0<< 9) |		//'0'->even parity, '1'->odd parity
-    				(0<< 8) |		//'0'->PE interrupt disabled, '1'->pe interrupt enabled
-    				(0<< 7) |		//'0'->tx empty interrupt disabled, '1'-tx empty interrupt enabled
-    				(0<< 6) |		//'0'->transmission completion interrupt disabled, '1'->transmission complete interrupt enabled
-    				(0<< 5) |		//'0'->rx not empty interrupt disabled, '1'->rx not empty interrupt enabled
-    				(0<< 4) |		//'0'->idle interrupt disabled, '1'->idle interrupt enabled
-    				(1<< 3) |		//'0'->disable tx, '1'->enable tx
-    				(1<< 2) |		//'0'->disable rx, '1'->enable rx
-    				(0<< 1) |		//'0'->disable receiver wake-up, '1'->enable receiver wake-up
-    				(0<< 0) |		//'0'->no break char is transmitted, '1'->break char will be transmitted
+    USART1->CR1 &=~(1<<0);			//'0'->disable uart, '1'->enable uart
+    USART1->CR1 =	(0<<28) | (0<<12) |	//0b00->1 start bit, 8 data bits, n stop bit; 0b01->1 start bit, 9 data bits, n stop bit, 0b10->1 start bit 7 data bits, n stop bit
+    				(0<<27) |		//0->disable end of block interrupt
+    				(0<<26) |		//0->receiver timeout interrupt disabled
+    				(0x00<<21) |	//0b00000->driver enable assertion time
+    				(0x00<<16) |	//0b00000->driver enable disassertion time
+    				(0<<15) |		//0->oversampling by 16
+    				(0<<14) |		//0->character match interrupt disabled
+    				(0<<13) |		//0->receiver in active mode permanently
+    				//bit 12 set earlier
+    				(0<<11) |		//0->idle line to wake up uart
+    				(0<<10) |		//0->no parity
+    				(0<<9) |		//0->even parity
+    				(0<<8) |		//0->disable PE interrupt
+    				(0<<7) |		//0->disable txie)
+    				(0<<6) |		//0->disable transmission complete interrupt
+    				(0<<5) |		//0->disable receiver buffer not empty interrupt
+    				(0<<4) |		//0->disable idle interrupt
+    				(1<<3) |		//0->transmitter disabled, 1->transmitter enabled
+    				(1<<2) |		//0->receiver disabled, 1->receiver enabled
+    				//bit 1 reserved
+    				(0<<0) |		//0->disable uart, 1->enable uart
     				0x00;
-    USART1->CR2 = 	(0<<14) |		//'0'->LIN mode disabled, '1'->LIN mode enabled
-    				(0<<12) |		//0->1 stop bit, 1->0.5 stop bit, 2->2 stop bit, 3 -> 1.5 stop bit
-    				(0<<11) |		//'0'->SCLK pin disabled, '1'->SCLK pin enabled
-    				(0<<10) |		//'0'->SCLK idles low, '1'->SCLK idles high
-    				(0<< 9) |		//'0'->first clock transition is first data capture edge, '1'->second clock transition is the first data capture edge
-    				(0<< 8) |		//'0'->clock pulse of the last data bit is not output to the sclk pin, '1'->clock pulse of the last data bit is output to the sclk pin
-    				(0<< 6) |		//'0'->LIN break detection interrupt disabled, '1'->LIN break detection interrupt enabled
-    				(0<< 5) |		//'0'->LIN break detection is 10-bit, '1'->LIN break detection is 11 bit
-    				(0<< 0) |		//address of the uart node
+    USART1->CR2 = 	(0x00<<28) |	//address of the uart
+    				(0x00<<24) |	//address of the uart
+    				(0<<23) |		//0->disable receiver time out
+    				(0x00<<21) |	//00->measurement of the start bit used to detect baud rate
+    				(0<<20) |		//auto baud rate disabled
+    				(0<<19) |		//0->data bit 0 first
+    				(0<<18) |		//0->data transmitted / received in positive logic
+    				(0<<17) |		//0->tx in positive logic
+    				(0<<16) |		//0->rx in positive logic
+    				(0<<15) |		//0->tx/rx pins not swapped, 1->tx/rx pins swapped
+    				(0x00<<12) |	//00->1 stop bit, 10->2 stop bit, 11->1.5 stop bit
+    				(0<<11) |		//0->sclk disabled
+    				(0<<10) |		//0->sclk idles low
+    				(0<<9) |		//0->clock on first data capture
+    				(0<<8) |		//0->clock on the last bit is not data pulse
+    				(0<<4) |		//0->4 bit address detection
     				0x00;
-    USART1->CR3 = 	(0<<11) |		//'0'->three sample bit, '1'->one sample bit
-    				(0<<10) |		//'0'->CTS interrupt disabled, '1'->CTS interrupt enabled
-    				(0<< 9) |		//'0'->CTS disabled, '1'->CTS enabled
-    				(0<< 8) |		//'0'->RTS interrupt disabled, '1'->RTS interrupt enabled
-    				(0<< 5) |		//'0'->smartcard mode disabled, '1'->smartcard mode enabled
-    				(0<< 4) |		//'0'->smartcard nack disabled, '1'->smartcard nack enabled
-    				(0<< 3) |		//'0'->half duplex mode not selected, '1'->half duplex mode selected
-    				(0<< 2) |		//'0'->irda normal mode, '1'->irda low-power mode
-    				(0<< 1) |		//'0'->irda disabled, '1'->irda enabled
-    				(0<< 0) |		//'0'->error interrupt disabled, '1'->error interrupt enabled
-    				0x00;
+    USART1->CR3 =	(0<<15) |		//0->driver enable signal active high
+    				(0<<14) |		//0->disable driver more
+    				0x00;			//reset value
     //set the baudrate register
-    USART1->BRR = SystemCoreClock / baudrate / 2 / ((USART1->CR1 & (1<<15))?1:2);		//per datasheet, for OVER8=0 or 1
-    USART1->DR = 0;					//reset the data register
-    USART1->SR = 0;					//reset the data register
+    uartdiv = F_UART / baudrate;
+    if (USART1->CR1 & (1<<15)) {		//oversample by 8
+    	uartdiv = uartdiv * 2;
+    	uartdiv = 	(uartdiv &~0x000f) |	//clear lowest 4 bits
+    				(1<<3) |			//bit 3 is always set
+    				((uartdiv >> 1) & 0x07);	//keep the lowest 3 bits
+    }
+    USART1->BRR = uartdiv;
+    //UARTx->BRR = F_UART / baudrate * ((UARTx->CR1 & (1<<15))?2:1);		//per datasheet, for OVER8=0 or 1
+
+    //UARTx->DR = 0;					//reset the data register
+    //UARTx->SR = 0;					//reset the data register
+
     //enable uart1
-    USART1->CR1 |= (1<<13);			//'0'->disable uart, '1'->enable uart
+    USART1->CR1 |= (1<<0);			//'0'->disable uart, '1'->enable uart
 
-    //configure the RX-PA9/TX-PA10 pins - GPIO clock assumed enabled here previously
-    GIO_INFL(GPIO_PinDef[PA9].gpio, GPIO_PinDef[PA9].mask);		//RX as floating input
-    GIO_AFPP(GPIO_PinDef[PA10].gpio, GPIO_PinDef[PA10].mask);	//TX as AFPP
-
+    //configure the TX-PA9/RX-PA10 pins - GPIO clock assumed enabled here previously
+    //RX as floating input/AF input, AF1
+    IO_INFL(GPIOA, 1<<10); GPIOA->AFR[1] = (GPIOA->AFR[1] &~(0x0f << (4 * (10-8)))) | (GPIOMODE_AF1<<(4 * (10-8)));
+	//TX as AFPP, AF1
+    IO_AFPP(GPIOA, 1<< 9); GPIOA->AFR[1] = (GPIOA->AFR[1] &~(0x0f << (4 * ( 9-8)))) | (GPIOMODE_AF1<<(4 * ( 9-8)));
 }
 
 //uart1 send a char
-void serial1Write(unsigned char dat) {
-    USART1->DR = dat;                        	//load the data buffer
-    //while (!(USART1->SR & (1<<6)));    		//wait for the transmission to complete
-    while (!(USART1->SR & USART_SR_TXE));    			//wait for the transmission buffer to be empty
+void serial1Write(char dat) {
+    while (!(USART1->ISR & USART_ISR_TXE));    	//wait for the transmission buffer to be empty
+    //while (uart1_busy()) continue;    			//wait for the transmission buffer to be empty
+    USART1->TDR = dat;                        	//load the data buffer
+    //while (!(UARTx->SR & (1<<6)));    		//wait for the transmission to complete
 }
 
 //uart1 returns a char
 unsigned char serial1Read(void) {
-    while (!(USART1->SR & USART_SR_RXNE));  			//wait for the receipt buffer to be empty
-    return USART1->DR;                       	//save the transmission buffer
+    //while (!(UARTx->SR & USART_SR_RXNE));  	//wait for the receipt buffer to be empty
+    return USART1->RDR;                       	//save the transmission buffer
 }
 
 //uart1 print a string
-void serial1Print(unsigned char *str) {
-	do {
-		while (!(USART1->SR & USART_SR_TXE));			//wait for the transmission buffer to empty
-		USART1->DR = *str++;					//load the data into transmission buffer
-	} while (*str);
+void serial1Print(char *str) {
+	while (*str) serial1Write(*str++);
 }
 
 //uart1 print a string + return
-void serial1Println(unsigned char *str) {
+void serial1Println(char *str) {
 	serial1Print(str);						//print the string
-	serial1Print("\n\r");					//print the return
+	serial1Print((char *)"\n\r");					//print the return
 }
 
-//test if uart1 is available
+//test if uart1 receiver is available (=has data)
 //return true if transmission on uart1 has completed
 uint8_t serial1Available(void) {
-	return (USART1->SR & USART_SR_TC)?true:false;
+	//return (UARTx->SR & USART_SR_TC)?true:false;
+	return (USART1->ISR & USART_ISR_RXNE);
+}
+
+//test if uart1 transmitter is busy
+//return true if transmission on uart1 has completed
+uint8_t serial1Busy(void) {
+	//return (UARTx->SR & USART_SR_TC)?true:false;
+	return !(USART1->ISR & USART_ISR_TXE);
 }
 #endif								//usart1
 
 #if defined(USE_UART2)
 //initialize uart2
 void serial2Begin(uint32_t baudrate) {
-    //configure uart1
-    //route clock to uart1
+	uint16_t uartdiv;
+
+	//configure uart2
+    //route clock to uart2
     RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
 
-    USART2->CR1 &=~(1<<13);			//'0'->disable uart, '1'->enable uart
-    USART2->CR1 = 	(0<<15) |		//'0'->oversample by 16, '1'->oversample by 8
-    				(0<<13) |		//'0'->disable uart, '1'->enable uart
-    				(0<<12) |		//'0'->1 start bit, 8 data bit, n stop bit, '1'->1 start bit, 9 data bit, n stop bit
-    				(0<<11) |		//'0'->idle line, '1'->wake by address
-    				(0<<10) |		//'0'->disable parity, '1'->enable parity
-    				(0<< 9) |		//'0'->even parity, '1'->odd parity
-    				(0<< 8) |		//'0'->PE interrupt disabled, '1'->pe interrupt enabled
-    				(0<< 7) |		//'0'->tx empty interrupt disabled, '1'-tx empty interrupt enabled
-    				(0<< 6) |		//'0'->transmission completion interrupt disabled, '1'->transmission complete interrupt enabled
-    				(0<< 5) |		//'0'->rx not empty interrupt disabled, '1'->rx not empty interrupt enabled
-    				(0<< 4) |		//'0'->idle interrupt disabled, '1'->idle interrupt enabled
-    				(1<< 3) |		//'0'->disable tx, '1'->enable tx
-    				(1<< 2) |		//'0'->disable rx, '1'->enable rx
-    				(0<< 1) |		//'0'->disable receiver wake-up, '1'->enable receiver wake-up
-    				(0<< 0) |		//'0'->no break char is transmitted, '1'->break char will be transmitted
+    USART2->CR1 &=~(1<<0);			//'0'->disable uart, '1'->enable uart
+    USART2->CR1 =	(0<<28) | (0<<12) |	//0b00->1 start bit, 8 data bits, n stop bit; 0b01->1 start bit, 9 data bits, n stop bit, 0b10->1 start bit 7 data bits, n stop bit
+    				(0<<27) |		//0->disable end of block interrupt
+    				(0<<26) |		//0->receiver timeout interrupt disabled
+    				(0x00<<21) |	//0b00000->driver enable assertion time
+    				(0x00<<16) |	//0b00000->driver enable disassertion time
+    				(0<<15) |		//0->oversampling by 16
+    				(0<<14) |		//0->character match interrupt disabled
+    				(0<<13) |		//0->receiver in active mode permanently
+    				//bit 12 set earlier
+    				(0<<11) |		//0->idle line to wake up uart
+    				(0<<10) |		//0->no parity
+    				(0<<9) |		//0->even parity
+    				(0<<8) |		//0->disable PE interrupt
+    				(0<<7) |		//0->disable txie)
+    				(0<<6) |		//0->disable transmission complete interrupt
+    				(0<<5) |		//0->disable receiver buffer not empty interrupt
+    				(0<<4) |		//0->disable idle interrupt
+    				(1<<3) |		//0->transmitter disabled, 1->transmitter enabled
+    				(1<<2) |		//0->receiver disabled, 1->receiver enabled
+    				//bit 1 reserved
+    				(0<<0) |		//0->disable uart, 1->enable uart
     				0x00;
-    USART2->CR2 = 	(0<<14) |		//'0'->LIN mode disabled, '1'->LIN mode enabled
-    				(0<<12) |		//0->1 stop bit, 1->0.5 stop bit, 2->2 stop bit, 3 -> 1.5 stop bit
-    				(0<<11) |		//'0'->SCLK pin disabled, '1'->SCLK pin enabled
-    				(0<<10) |		//'0'->SCLK idles low, '1'->SCLK idles high
-    				(0<< 9) |		//'0'->first clock transition is first data capture edge, '1'->second clock transition is the first data capture edge
-    				(0<< 8) |		//'0'->clock pulse of the last data bit is not output to the sclk pin, '1'->clock pulse of the last data bit is output to the sclk pin
-    				(0<< 6) |		//'0'->LIN break detection interrupt disabled, '1'->LIN break detection interrupt enabled
-    				(0<< 5) |		//'0'->LIN break detection is 10-bit, '1'->LIN break detection is 11 bit
-    				(0<< 0) |		//address of the uart node
+    USART2->CR2 = 	(0x00<<28) |	//address of the uart
+    				(0x00<<24) |	//address of the uart
+    				(0<<23) |		//0->disable receiver time out
+    				(0x00<<21) |	//00->measurement of the start bit used to detect baud rate
+    				(0<<20) |		//auto baud rate disabled
+    				(0<<19) |		//0->data bit 0 first
+    				(0<<18) |		//0->data transmitted / received in positive logic
+    				(0<<17) |		//0->tx in positive logic
+    				(0<<16) |		//0->rx in positive logic
+    				(0<<15) |		//0->tx/rx pins not swapped, 1->tx/rx pins swapped
+    				(0x00<<12) |	//00->1 stop bit, 10->2 stop bit, 11->1.5 stop bit
+    				(0<<11) |		//0->sclk disabled
+    				(0<<10) |		//0->sclk idles low
+    				(0<<9) |		//0->clock on first data capture
+    				(0<<8) |		//0->clock on the last bit is not data pulse
+    				(0<<4) |		//0->4 bit address detection
     				0x00;
-    USART2->CR3 = 	(0<<11) |		//'0'->three sample bit, '1'->one sample bit
-    				(0<<10) |		//'0'->CTS interrupt disabled, '1'->CTS interrupt enabled
-    				(0<< 9) |		//'0'->CTS disabled, '1'->CTS enabled
-    				(0<< 8) |		//'0'->RTS interrupt disabled, '1'->RTS interrupt enabled
-    				(0<< 5) |		//'0'->smartcard mode disabled, '1'->smartcard mode enabled
-    				(0<< 4) |		//'0'->smartcard nack disabled, '1'->smartcard nack enabled
-    				(0<< 3) |		//'0'->half duplex mode not selected, '1'->half duplex mode selected
-    				(0<< 2) |		//'0'->irda normal mode, '1'->irda low-power mode
-    				(0<< 1) |		//'0'->irda disabled, '1'->irda enabled
-    				(0<< 0) |		//'0'->error interrupt disabled, '1'->error interrupt enabled
-    				0x00;
+    USART2->CR3 =	(0<<15) |		//0->driver enable signal active high
+    				(0<<14) |		//0->disable driver more
+    				0x00;			//reset value
     //set the baudrate register
-    USART2->BRR = SystemCoreClock / baudrate / 2 / ((USART2->CR1 & (1<<15))?1:2);		//per datasheet, for OVER8=0 or 1
-    USART2->DR = 0;					//reset the data register
-    USART2->SR = 0;					//reset the data register
-    //enable uart1
-    USART2->CR1 |= (1<<13);			//'0'->disable uart, '1'->enable uart
+    uartdiv = F_UART / baudrate;
+    if (USART2->CR1 & (1<<15)) {		//oversample by 8
+    	uartdiv = uartdiv * 2;
+    	uartdiv = 	(uartdiv &~0x000f) |	//clear lowest 4 bits
+    				(1<<3) |			//bit 3 is always set
+    				((uartdiv >> 1) & 0x07);	//keep the lowest 3 bits
+    }
+    USART2->BRR = uartdiv;
+    //UARTx->BRR = F_UART / baudrate * ((UARTx->CR1 & (1<<15))?2:1);		//per datasheet, for OVER8=0 or 1
 
-    //configure the RX-PA2/TX-PA3 pins - GPIO clock assumed enabled here previously
-    GIO_INFL(GPIO_PinDef[PA2].gpio, GPIO_PinDef[PA2].mask);			//RX as floating input
-    GIO_AFPP(GPIO_PinDef[PA3].gpio, GPIO_PinDef[PA3].mask);			//TX as AFPP
+    //UARTx->DR = 0;					//reset the data register
+    //UARTx->SR = 0;					//reset the data register
 
+    //enable uart2
+    USART2->CR1 |= (1<<0);			//'0'->disable uart, '1'->enable uart
+
+    //configure the TX-PA9/RX-PA10 pins - GPIO clock assumed enabled here previously
+    //RX as floating input/AF input, AF1
+    IO_INFL(GPIOA, 1<<10); GPIOA->AFR[1] = (GPIOA->AFR[1] &~(0x0f << (4 * (10-8)))) | (GPIOMODE_AF1<<(4 * (10-8)));
+	//TX as AFPP, AF1
+    IO_AFPP(GPIOA, 1<< 9); GPIOA->AFR[1] = (GPIOA->AFR[1] &~(0x0f << (4 * ( 9-8)))) | (GPIOMODE_AF1<<(4 * ( 9-8)));
 }
 
-//uart1 send a char
-void serial2Write(unsigned char dat) {
-    USART2->DR = dat;                        	//load the data buffer
-    //while (!(USART2->SR & (1<<6)));    		//wait for the transmission to complete
-    while (!(USART2->SR & USART_SR_TXE));    			//wait for the transmission buffer to be empty
+//uart2 send a char
+void serial2Write(char dat) {
+    while (!(USART2->ISR & USART_ISR_TXE));    	//wait for the transmission buffer to be empty
+    //while (uart2_busy()) continue;    			//wait for the transmission buffer to be empty
+    USART2->TDR = dat;                        	//load the data buffer
+    //while (!(UARTx->SR & (1<<6)));    		//wait for the transmission to complete
 }
 
-//uart1 returns a char
+//uart2 returns a char
 unsigned char serial2Read(void) {
-    while (!(USART2->SR & USART_SR_RXNE));  			//wait for the receipt buffer to be empty
-    return USART2->DR;                       	//save the transmission buffer
+    //while (!(UARTx->SR & USART_SR_RXNE));  	//wait for the receipt buffer to be empty
+    return USART2->RDR;                       	//save the transmission buffer
 }
 
-//uart1 print a string
-void serial2Print(unsigned char *str) {
-	do {
-		while (!(USART2->SR & USART_SR_TXE));			//wait for the transmission buffer to empty
-		USART2->DR = *str++;					//load the data into transmission buffer
-	} while (*str);
+//uart2 print a string
+void serial2Print(char *str) {
+	while (*str) serial2Write(*str++);
 }
 
-//uart1 print a string + return
-void serial2Println(unsigned char *str) {
+//uart2 print a string + return
+void seria21Println(char *str) {
 	serial2Print(str);						//print the string
-	serial2Print("\n\r");					//print the return
+	serial2Print((char *) "\n\r");					//print the return
 }
 
-//test if uart1 is available
-//return true if transmission on uart1 has completed
+//test if uart2 receiver is available (=has data)
+//return true if transmission on uart2 has completed
 uint8_t serial2Available(void) {
-	return (USART2->SR & USART_SR_TC)?true:false;
+	//return (UARTx->SR & USART_SR_TC)?true:false;
+	return (USART2->ISR & USART_ISR_RXNE);
 }
-#endif										//usart2
+
+//test if uart2 transmitter is busy
+//return true if transmission on uart2 has completed
+uint8_t serial2Busy(void) {
+	//return (UARTx->SR & USART_SR_TC)?true:false;
+	return !(USART2->ISR & USART_ISR_TXE);
+}
+#endif								//usart1
 
 #if defined(USE_UART3)
 //initialize uart3
 void serial3Begin(uint32_t baudrate) {
-    //configure uart1
+	uint16_t uartdiv;
+
+	//configure uart1
     //route clock to uart1
-    RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+    RCC->APB2ENR |= RCC_APB2ENR_USART3EN;
 
-    USART3->CR1 &=~(1<<13);			//'0'->disable uart, '1'->enable uart
-    USART3->CR1 = 	(0<<15) |		//'0'->oversample by 16, '1'->oversample by 8
-    				(0<<13) |		//'0'->disable uart, '1'->enable uart
-    				(0<<12) |		//'0'->1 start bit, 8 data bit, n stop bit, '1'->1 start bit, 9 data bit, n stop bit
-    				(0<<11) |		//'0'->idle line, '1'->wake by address
-    				(0<<10) |		//'0'->disable parity, '1'->enable parity
-    				(0<< 9) |		//'0'->even parity, '1'->odd parity
-    				(0<< 8) |		//'0'->PE interrupt disabled, '1'->pe interrupt enabled
-    				(0<< 7) |		//'0'->tx empty interrupt disabled, '1'-tx empty interrupt enabled
-    				(0<< 6) |		//'0'->transmission completion interrupt disabled, '1'->transmission complete interrupt enabled
-    				(0<< 5) |		//'0'->rx not empty interrupt disabled, '1'->rx not empty interrupt enabled
-    				(0<< 4) |		//'0'->idle interrupt disabled, '1'->idle interrupt enabled
-    				(1<< 3) |		//'0'->disable tx, '1'->enable tx
-    				(1<< 2) |		//'0'->disable rx, '1'->enable rx
-    				(0<< 1) |		//'0'->disable receiver wake-up, '1'->enable receiver wake-up
-    				(0<< 0) |		//'0'->no break char is transmitted, '1'->break char will be transmitted
+    USART3->CR1 &=~(1<<0);			//'0'->disable uart, '1'->enable uart
+    USART3->CR1 =	(0<<28) | (0<<12) |	//0b00->1 start bit, 8 data bits, n stop bit; 0b01->1 start bit, 9 data bits, n stop bit, 0b10->1 start bit 7 data bits, n stop bit
+    				(0<<27) |		//0->disable end of block interrupt
+    				(0<<26) |		//0->receiver timeout interrupt disabled
+    				(0x00<<21) |	//0b00000->driver enable assertion time
+    				(0x00<<16) |	//0b00000->driver enable disassertion time
+    				(0<<15) |		//0->oversampling by 16
+    				(0<<14) |		//0->character match interrupt disabled
+    				(0<<13) |		//0->receiver in active mode permanently
+    				//bit 12 set earlier
+    				(0<<11) |		//0->idle line to wake up uart
+    				(0<<10) |		//0->no parity
+    				(0<<9) |		//0->even parity
+    				(0<<8) |		//0->disable PE interrupt
+    				(0<<7) |		//0->disable txie)
+    				(0<<6) |		//0->disable transmission complete interrupt
+    				(0<<5) |		//0->disable receiver buffer not empty interrupt
+    				(0<<4) |		//0->disable idle interrupt
+    				(1<<3) |		//0->transmitter disabled, 1->transmitter enabled
+    				(1<<2) |		//0->receiver disabled, 1->receiver enabled
+    				//bit 1 reserved
+    				(0<<0) |		//0->disable uart, 1->enable uart
     				0x00;
-    USART3->CR2 = 	(0<<14) |		//'0'->LIN mode disabled, '1'->LIN mode enabled
-    				(0<<12) |		//0->1 stop bit, 1->0.5 stop bit, 2->2 stop bit, 3 -> 1.5 stop bit
-    				(0<<11) |		//'0'->SCLK pin disabled, '1'->SCLK pin enabled
-    				(0<<10) |		//'0'->SCLK idles low, '1'->SCLK idles high
-    				(0<< 9) |		//'0'->first clock transition is first data capture edge, '1'->second clock transition is the first data capture edge
-    				(0<< 8) |		//'0'->clock pulse of the last data bit is not output to the sclk pin, '1'->clock pulse of the last data bit is output to the sclk pin
-    				(0<< 6) |		//'0'->LIN break detection interrupt disabled, '1'->LIN break detection interrupt enabled
-    				(0<< 5) |		//'0'->LIN break detection is 10-bit, '1'->LIN break detection is 11 bit
-    				(0<< 0) |		//address of the uart node
+    USART3->CR2 = 	(0x00<<28) |	//address of the uart
+    				(0x00<<24) |	//address of the uart
+    				(0<<23) |		//0->disable receiver time out
+    				(0x00<<21) |	//00->measurement of the start bit used to detect baud rate
+    				(0<<20) |		//auto baud rate disabled
+    				(0<<19) |		//0->data bit 0 first
+    				(0<<18) |		//0->data transmitted / received in positive logic
+    				(0<<17) |		//0->tx in positive logic
+    				(0<<16) |		//0->rx in positive logic
+    				(0<<15) |		//0->tx/rx pins not swapped, 1->tx/rx pins swapped
+    				(0x00<<12) |	//00->1 stop bit, 10->2 stop bit, 11->1.5 stop bit
+    				(0<<11) |		//0->sclk disabled
+    				(0<<10) |		//0->sclk idles low
+    				(0<<9) |		//0->clock on first data capture
+    				(0<<8) |		//0->clock on the last bit is not data pulse
+    				(0<<4) |		//0->4 bit address detection
     				0x00;
-    USART3->CR3 = 	(0<<11) |		//'0'->three sample bit, '1'->one sample bit
-    				(0<<10) |		//'0'->CTS interrupt disabled, '1'->CTS interrupt enabled
-    				(0<< 9) |		//'0'->CTS disabled, '1'->CTS enabled
-    				(0<< 8) |		//'0'->RTS interrupt disabled, '1'->RTS interrupt enabled
-    				(0<< 5) |		//'0'->smartcard mode disabled, '1'->smartcard mode enabled
-    				(0<< 4) |		//'0'->smartcard nack disabled, '1'->smartcard nack enabled
-    				(0<< 3) |		//'0'->half duplex mode not selected, '1'->half duplex mode selected
-    				(0<< 2) |		//'0'->irda normal mode, '1'->irda low-power mode
-    				(0<< 1) |		//'0'->irda disabled, '1'->irda enabled
-    				(0<< 0) |		//'0'->error interrupt disabled, '1'->error interrupt enabled
-    				0x00;
+    USART3->CR3 =	(0<<15) |		//0->driver enable signal active high
+    				(0<<14) |		//0->disable driver more
+    				0x00;			//reset value
     //set the baudrate register
-    USART3->BRR = SystemCoreClock / baudrate / 2 / ((USART3->CR1 & (1<<15))?1:2);		//per datasheet, for OVER8=0 or 1
-    USART3->DR = 0;					//reset the data register
-    USART3->SR = 0;					//reset the data register
+    uartdiv = F_UART / baudrate;
+    if (USART3->CR1 & (1<<15)) {		//oversample by 8
+    	uartdiv = uartdiv * 2;
+    	uartdiv = 	(uartdiv &~0x000f) |	//clear lowest 4 bits
+    				(1<<3) |			//bit 3 is always set
+    				((uartdiv >> 1) & 0x07);	//keep the lowest 3 bits
+    }
+    USART3->BRR = uartdiv;
+    //UARTx->BRR = F_UART / baudrate * ((UARTx->CR1 & (1<<15))?2:1);		//per datasheet, for OVER8=0 or 1
+
+    //UARTx->DR = 0;					//reset the data register
+    //UARTx->SR = 0;					//reset the data register
+
     //enable uart1
-    USART3->CR1 |= (1<<13);			//'0'->disable uart, '1'->enable uart
+    USART3->CR1 |= (1<<0);			//'0'->disable uart, '1'->enable uart
 
-    //configure the RX-PB11/TX-PB10 pins - GPIO clock assumed enabled here previously
-    GIO_INFL(GPIO_PinDef[PB11].gpio, GPIO_PinDef[PB11].mask);		//RX as floating input
-    GIO_AFPP(GPIO_PinDef[PB10].gpio, GPIO_PinDef[PB10].mask);		//TX as AFPP
-
+    //configure the TX-PA9/RX-PA10 pins - GPIO clock assumed enabled here previously
+    //RX as floating input/AF input, AF1
+    IO_INFL(GPIOA, 1<<10); GPIOA->AFR[1] = (GPIOA->AFR[1] &~(0x0f << (4 * (10-8)))) | (GPIOMODE_AF1<<(4 * (10-8)));
+	//TX as AFPP, AF1
+    IO_AFPP(GPIOA, 1<< 9); GPIOA->AFR[1] = (GPIOA->AFR[1] &~(0x0f << (4 * ( 9-8)))) | (GPIOMODE_AF1<<(4 * ( 9-8)));
 }
 
-//uart1 send a char
-void serial3Write(unsigned char dat) {
-    USART3->DR = dat;                        	//load the data buffer
-    //while (!(USART3->SR & (1<<6)));    		//wait for the transmission to complete
-    while (!(USART3->SR & USART_SR_TXE));    			//wait for the transmission buffer to be empty
+//uart3 send a char
+void serial3Write(char dat) {
+    while (!(USART3->ISR & USART_ISR_TXE));    	//wait for the transmission buffer to be empty
+    //while (uart1_busy()) continue;    			//wait for the transmission buffer to be empty
+    USART3->TDR = dat;                        	//load the data buffer
+    //while (!(UARTx->SR & (1<<6)));    		//wait for the transmission to complete
 }
 
-//uart1 returns a char
-unsigned char serial3Read(void) {
-    while (!(USART3->SR & USART_SR_RXNE));  			//wait for the receipt buffer to be empty
-    return USART3->DR;                       	//save the transmission buffer
+//uart3 returns a char
+unsigned char seria31Read(void) {
+    //while (!(UARTx->SR & USART_SR_RXNE));  	//wait for the receipt buffer to be empty
+    return USART3->RDR;                       	//save the transmission buffer
 }
 
-//uart1 print a string
-void serial3Print(unsigned char *str) {
-	do {
-		while (!(USART3->SR & USART_SR_TXE));			//wait for the transmission buffer to empty
-		USART3->DR = *str++;					//load the data into transmission buffer
-	} while (*str);
+//uart3 print a string
+void serial3Print(char *str) {
+	while (*str) uart1_put(*str++);
 }
 
-//uart1 print a string + return
-void serial3Println(unsigned char *str) {
+//uart3 print a string + return
+void seria31Println(char *str) {
 	serial3Print(str);						//print the string
-	serial3Print("\n\r");					//print the return
+	serial3Print((char *)"\n\r");					//print the return
 }
 
-//test if uart1 is available
-//return true if transmission on uart1 has completed
-uint8_t serial3Available(void) {
-	return (USART3->SR & USART_SR_TC)?true:false;
+//test if uart3 receiver is available (=has data)
+//return true if transmission on uart3 has completed
+uint8_t seria31Available(void) {
+	//return (UARTx->SR & USART_SR_TC)?true:false;
+	return (USART3->ISR & USART_ISR_RXNE);
 }
-#endif										//USART3
+
+//test if uart3 transmitter is busy
+//return true if transmission on uart3 has completed
+uint8_t seria31Busy(void) {
+	//return (UARTx->SR & USART_SR_TC)?true:false;
+	return !(USART3->ISR & USART_ISR_TXE);
+}
+#endif								//usart1
+
+#if defined(USE_TIM1)
+//initialize tim1 to use compare channels as timers
+//16-bit prescaler. 32-bit used for compatability
+void tim1_init(uint32_t ps) {
+	//route the clock to timer
+	RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+
+	//source from internal clock -> disable slave mode
+	TIM1->SMCR &=~TIM_SMCR_SMS;			//clear sms->use internal clock
+
+	//stop the timer to configure it
+	TIM1->CR1 &=~TIM_CR1_CEN;			//clear cen. 0=disable the timer, 1=enable the timer
+	TIM1->CR1 &=~TIM_CR1_CKD;			//clear CKD0..1. 0b00->1x clock; 0b01->2:1 clock, 0b10->4:1 clk; 0b11->reserved
+	TIM1->CR1 &=~TIM_CR1_DIR;			//clear DIR bit. 0=upcounter, 1=downcounter
+	TIM1->CR1 &=~TIM_CR1_OPM;			//clear opm bit. 0=periodic timer, 1=one-shot timer
+	//or to simply zero the register
+	//TIM1->CR1 = 0;						//much easier
+
+	//clear the status register bits for capture / compare flags
+	TIM1->SR &=~(TIM_SR_CC1IF | TIM_SR_CC2IF | TIM_SR_CC3IF | TIM_SR_CC4IF);
+	//disable the interrupt by clearing the enable bits
+	TIM1->DIER &=~(TIM_DIER_CC1IE | TIM_DIER_CC2IE | TIM_DIER_CC3IE | TIM_DIER_CC4IE);
+
+	//set the prescaler
+	TIM1->PSC = ps - 1;					//set the prescaler
+	TIM1->RCR = 0;						//repetition counter = 0 (=no repetition)
+	TIM1->ARR = -1;						//auto reload register / period = 0; - need to change for downcounters
+	TIM1->CNT = 0;						//reset the counter
+
+	//enable the timer.
+	TIM1->CR1 |= TIM_CR1_CEN;			//enable the timer
+}
+
+//set tim1_oc1 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim1_setpr1(uint32_t pr) {
+	//save the period value
+	_tim1_oc1 = pr - 1;
+	TIM1->CCR1 = _tim1_oc1;
+
+	//clear the flag
+	//TIM1->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM1->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim1_act1(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM1_CC_IRQn);		//disable irq
+
+	_tim1_oc1isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM1->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	TIM1->DIER |= TIM_DIER_CC1IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM1_CC_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+
+//set tim1_oc2 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim1_setpr2(uint32_t pr) {
+	//save the period value
+	_tim1_oc2 = pr - 1;
+	TIM1->CCR2 = _tim1_oc2;
+
+	//clear the flag
+	//TIM1->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM1->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim1_act2(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM1_CC_IRQn);		//disable irq
+
+	_tim1_oc2isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM1->SR &=~TIM_SR_CC2IF;			//clear the interrupt flag
+	TIM1->DIER |= TIM_DIER_CC2IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM1_CC_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+
+//set tim1_oc2 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim1_setpr3(uint32_t pr) {
+	//save the period value
+	_tim1_oc3 = pr - 1;
+	TIM1->CCR3 = _tim1_oc3;
+
+	//clear the flag
+	//TIM1->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM1->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim1_act3(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM1_CC_IRQn);		//disable irq
+
+	_tim1_oc3isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM1->SR &=~TIM_SR_CC3IF;			//clear the interrupt flag
+	TIM1->DIER |= TIM_DIER_CC3IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM1_CC_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+
+//set tim1_oc2 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim1_setpr4(uint32_t pr) {
+	//save the period value
+	_tim1_oc4 = pr - 1;
+	TIM1->CCR4 = _tim1_oc4;
+
+	//clear the flag
+	//TIM1->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM1->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim1_act4(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM1_CC_IRQn);		//disable irq
+
+	_tim1_oc4isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM1->SR &=~TIM_SR_CC4IF;			//clear the interrupt flag
+	TIM1->DIER |= TIM_DIER_CC4IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM1_CC_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+#endif
+
+#if defined(USE_TIM2)
+//initialize tim2 to use compare channels as timers
+//16-bit prescaler. 32-bit used for compatability
+void tim2_init(uint32_t ps) {
+	//route the clock to timer
+	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+
+	//source from internal clock -> disable slave mode
+	TIM2->SMCR &=~TIM_SMCR_SMS;			//clear sms->use internal clock
+
+	//stop the timer to configure it
+	TIM2->CR1 &=~TIM_CR1_CEN;			//clear cen. 0=disable the timer, 1=enable the timer
+	TIM2->CR1 &=~TIM_CR1_CKD;			//clear CKD0..1. 0b00->1x clock; 0b01->2:1 clock, 0b10->4:1 clk; 0b11->reserved
+	TIM2->CR1 &=~TIM_CR1_DIR;			//clear DIR bit. 0=upcounter, 1=downcounter
+	TIM2->CR1 &=~TIM_CR1_OPM;			//clear opm bit. 0=periodic timer, 1=one-shot timer
+	//or to simply zero the register
+	//TIM2->CR1 = 0;						//much easier
+
+	//clear the status register bits for capture / compare flags
+	TIM2->SR &=~(TIM_SR_CC1IF | TIM_SR_CC2IF | TIM_SR_CC3IF | TIM_SR_CC4IF);
+	//disable the interrupt by clearing the enable bits
+	TIM2->DIER &=~(TIM_DIER_CC1IE | TIM_DIER_CC2IE | TIM_DIER_CC3IE | TIM_DIER_CC4IE);
+
+	//set the prescaler
+	TIM2->PSC = ps - 1;					//set the prescaler
+	TIM2->RCR = 0;						//repetition counter = 0 (=no repetition)
+	TIM2->ARR = -1;						//auto reload register / period = 0; - need to change for downcounters
+	TIM2->CNT = 0;						//reset the counter
+
+	//enable the timer.
+	TIM2->CR1 |= TIM_CR1_CEN;			//enable the timer
+}
+
+//set tim2_oc1 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim2_setpr1(uint32_t pr) {
+	//save the period value
+	_tim2_oc1 = pr - 1;
+	TIM2->CCR1 = _tim2_oc1;
+
+	//clear the flag
+	//TIM2->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM2->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim2_act1(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM2_IRQn);		//disable irq
+
+	_tim2_oc1isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM2->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	TIM2->DIER |= TIM_DIER_CC1IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM2_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+
+//set tim2_oc2 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim2_setpr2(uint32_t pr) {
+	//save the period value
+	_tim2_oc2 = pr - 1;
+	TIM2->CCR2 = _tim2_oc2;
+
+	//clear the flag
+	//TIM2->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM2->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim2_act2(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM2_IRQn);		//disable irq
+
+	_tim2_oc2isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM2->SR &=~TIM_SR_CC2IF;			//clear the interrupt flag
+	TIM2->DIER |= TIM_DIER_CC2IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM2_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+
+//set tim2_oc2 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim2_setpr3(uint32_t pr) {
+	//save the period value
+	_tim2_oc3 = pr - 1;
+	TIM2->CCR3 = _tim2_oc3;
+
+	//clear the flag
+	//TIM2->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM2->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim2_act3(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM2_IRQn);		//disable irq
+
+	_tim2_oc3isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM2->SR &=~TIM_SR_CC3IF;			//clear the interrupt flag
+	TIM2->DIER |= TIM_DIER_CC3IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM2_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+
+//set tim2_oc2 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim2_setpr4(uint32_t pr) {
+	//save the period value
+	_tim2_oc4 = pr - 1;
+	TIM2->CCR4 = _tim2_oc4;
+
+	//clear the flag
+	//TIM2->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM2->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim2_act4(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM2_IRQn);		//disable irq
+
+	_tim2_oc4isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM2->SR &=~TIM_SR_CC4IF;			//clear the interrupt flag
+	TIM2->DIER |= TIM_DIER_CC4IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM2_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+#endif
+
+#if defined(USE_TIM3)
+//initialize tim3 to use compare channels as timers
+//16-bit prescaler. 32-bit used for compatability
+void tim3_init(uint32_t ps) {
+	//route the clock to timer
+	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+
+	//source from internal clock -> disable slave mode
+	TIM3->SMCR &=~TIM_SMCR_SMS;			//clear sms->use internal clock
+
+	//stop the timer to configure it
+	TIM3->CR1 &=~TIM_CR1_CEN;			//clear cen. 0=disable the timer, 1=enable the timer
+	TIM3->CR1 &=~TIM_CR1_CKD;			//clear CKD0..1. 0b00->1x clock; 0b01->2:1 clock, 0b10->4:1 clk; 0b11->reserved
+	TIM3->CR1 &=~TIM_CR1_DIR;			//clear DIR bit. 0=upcounter, 1=downcounter
+	TIM3->CR1 &=~TIM_CR1_OPM;			//clear opm bit. 0=periodic timer, 1=one-shot timer
+	//or to simply zero the register
+	//TIM3->CR1 = 0;						//much easier
+
+	//clear the status register bits for capture / compare flags
+	TIM3->SR &=~(TIM_SR_CC1IF | TIM_SR_CC2IF | TIM_SR_CC3IF | TIM_SR_CC4IF);
+	//disable the interrupt by clearing the enable bits
+	TIM3->DIER &=~(TIM_DIER_CC1IE | TIM_DIER_CC2IE | TIM_DIER_CC3IE | TIM_DIER_CC4IE);
+
+	//set the prescaler
+	TIM3->PSC = ps - 1;					//set the prescaler
+	TIM3->RCR = 0;						//repetition counter = 0 (=no repetition)
+	TIM3->ARR = -1;						//auto reload register / period = 0; - need to change for downcounters
+	TIM3->CNT = 0;						//reset the counter
+
+	//enable the timer.
+	TIM3->CR1 |= TIM_CR1_CEN;			//enable the timer
+}
+
+//set tim3_oc1 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim3_setpr1(uint32_t pr) {
+	//save the period value
+	_tim3_oc1 = pr - 1;
+	TIM3->CCR1 = _tim3_oc1;
+
+	//clear the flag
+	//TIM3->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM3->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim3_act1(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM3_IRQn);		//disable irq
+
+	_tim3_oc1isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM3->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	TIM3->DIER |= TIM_DIER_CC1IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM3_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+
+//set tim3_oc2 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim3_setpr2(uint32_t pr) {
+	//save the period value
+	_tim3_oc2 = pr - 1;
+	TIM3->CCR2 = _tim3_oc2;
+
+	//clear the flag
+	//TIM3->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM3->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim3_act2(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM3_IRQn);		//disable irq
+
+	_tim3_oc2isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM3->SR &=~TIM_SR_CC2IF;			//clear the interrupt flag
+	TIM3->DIER |= TIM_DIER_CC2IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM3_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+
+//set tim3_oc2 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim3_setpr3(uint32_t pr) {
+	//save the period value
+	_tim3_oc3 = pr - 1;
+	TIM3->CCR3 = _tim3_oc3;
+
+	//clear the flag
+	//TIM3->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM3->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim3_act3(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM3_IRQn);		//disable irq
+
+	_tim3_oc3isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM3->SR &=~TIM_SR_CC3IF;			//clear the interrupt flag
+	TIM3->DIER |= TIM_DIER_CC3IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM3_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+
+//set tim3_oc2 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim3_setpr4(uint32_t pr) {
+	//save the period value
+	_tim3_oc4 = pr - 1;
+	TIM3->CCR4 = _tim3_oc4;
+
+	//clear the flag
+	//TIM3->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM3->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim3_act4(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM3_IRQn);		//disable irq
+
+	_tim3_oc4isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM3->SR &=~TIM_SR_CC4IF;			//clear the interrupt flag
+	TIM3->DIER |= TIM_DIER_CC4IE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM3_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+#endif
+
+#if defined(USE_TIM14)
+//initialize tim4 to use compare channels as timers
+//16-bit prescaler. 32-bit used for compatability
+void tim14_init(uint32_t ps) {
+	//route the clock to timer
+	RCC->APB1ENR |= RCC_APB1ENR_TIM14EN;
+
+	//source from internal clock -> disable slave mode
+	TIM14->SMCR &=~TIM_SMCR_SMS;			//clear sms->use internal clock
+
+	//stop the timer to configure it
+	TIM14->CR1 &=~TIM_CR1_CEN;			//clear cen. 0=disable the timer, 1=enable the timer
+	TIM14->CR1 &=~TIM_CR1_CKD;			//clear CKD0..1. 0b00->1x clock; 0b01->2:1 clock, 0b10->4:1 clk; 0b11->reserved
+	TIM14->CR1 &=~TIM_CR1_DIR;			//clear DIR bit. 0=upcounter, 1=downcounter
+	TIM14->CR1 &=~TIM_CR1_OPM;			//clear opm bit. 0=periodic timer, 1=one-shot timer
+	//or to simply zero the register
+	//TIM14->CR1 = 0;						//much easier
+
+	//clear the status register bits for capture / compare flags
+	TIM14->SR &=~(TIM_SR_CC1IF | TIM_SR_CC2IF | TIM_SR_CC3IF | TIM_SR_CC4IF | TIM_SR_UIF);
+	//disable the interrupt by clearing the enable bits
+	TIM14->DIER &=~(TIM_DIER_CC1IE | TIM_DIER_CC2IE | TIM_DIER_CC3IE | TIM_DIER_CC4IE | TIM_DIER_UIE);
+
+	//set the prescaler
+	TIM14->PSC = ps - 1;					//set the prescaler
+	TIM14->RCR = 0;						//repetition counter = 0 (=no repetition)
+	TIM14->ARR = -1;						//auto reload register / period = 0; - need to change for downcounters
+	TIM14->CNT = 0;						//reset the counter
+
+	//enable the timer.
+	TIM14->CR1 |= TIM_CR1_CEN;			//enable the timer
+}
+
+//set tim4_oc1 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim14_setpr(uint32_t pr) {
+	//save the period value
+	TIM14->ARR = pr - 1;
+
+	//clear the flag
+	//TIM14->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM14->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim14_act(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM14_IRQn);		//disable irq
+
+	_tim14_isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM14->SR &=~TIM_SR_UIF;			//clear the interrupt flag
+	TIM14->DIER |= TIM_DIER_UIE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM14_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+#endif
+
+#if defined(USE_TIM15)
+//initialize tim4 to use compare channels as timers
+//16-bit prescaler. 32-bit used for compatability
+void tim15_init(uint32_t ps) {
+	//route the clock to timer
+	RCC->APB2ENR |= RCC_APB2ENR_TIM15EN;
+
+	//source from internal clock -> disable slave mode
+	TIM15->SMCR &=~TIM_SMCR_SMS;			//clear sms->use internal clock
+
+	//stop the timer to configure it
+	TIM15->CR1 &=~TIM_CR1_CEN;			//clear cen. 0=disable the timer, 1=enable the timer
+	TIM15->CR1 &=~TIM_CR1_CKD;			//clear CKD0..1. 0b00->1x clock; 0b01->2:1 clock, 0b10->4:1 clk; 0b11->reserved
+	TIM15->CR1 &=~TIM_CR1_DIR;			//clear DIR bit. 0=upcounter, 1=downcounter
+	TIM15->CR1 &=~TIM_CR1_OPM;			//clear opm bit. 0=periodic timer, 1=one-shot timer
+	//or to simply zero the register
+	//TIM15->CR1 = 0;						//much easier
+
+	//clear the status register bits for capture / compare flags
+	TIM15->SR &=~(TIM_SR_CC1IF | TIM_SR_CC2IF | TIM_SR_CC3IF | TIM_SR_CC4IF | TIM_SR_UIF);
+	//disable the interrupt by clearing the enable bits
+	TIM15->DIER &=~(TIM_DIER_CC1IE | TIM_DIER_CC2IE | TIM_DIER_CC3IE | TIM_DIER_CC4IE | TIM_DIER_UIE);
+
+	//set the prescaler
+	TIM15->PSC = ps - 1;					//set the prescaler
+	TIM15->RCR = 0;						//repetition counter = 0 (=no repetition)
+	TIM15->ARR = -1;						//auto reload register / period = 0; - need to change for downcounters
+	TIM15->CNT = 0;						//reset the counter
+
+	//enable the timer.
+	TIM15->CR1 |= TIM_CR1_CEN;			//enable the timer
+}
+
+//set tim4_oc1 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim15_setpr(uint32_t pr) {
+	//save the period value
+	TIM15->ARR = pr - 1;
+
+	//clear the flag
+	//TIM15->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM15->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim15_act(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM15_IRQn);		//disable irq
+
+	_tim15_isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM15->SR &=~TIM_SR_UIF;			//clear the interrupt flag
+	TIM15->DIER |= TIM_DIER_UIE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM15_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+#endif
+
+#if defined(USE_TIM16)
+//initialize tim4 to use compare channels as timers
+//16-bit prescaler. 32-bit used for compatability
+void tim16_init(uint32_t ps) {
+	//route the clock to timer
+	RCC->APB2ENR |= RCC_APB2ENR_TIM16EN;
+
+	//source from internal clock -> disable slave mode
+	TIM16->SMCR &=~TIM_SMCR_SMS;			//clear sms->use internal clock
+
+	//stop the timer to configure it
+	TIM16->CR1 &=~TIM_CR1_CEN;			//clear cen. 0=disable the timer, 1=enable the timer
+	TIM16->CR1 &=~TIM_CR1_CKD;			//clear CKD0..1. 0b00->1x clock; 0b01->2:1 clock, 0b10->4:1 clk; 0b11->reserved
+	TIM16->CR1 &=~TIM_CR1_DIR;			//clear DIR bit. 0=upcounter, 1=downcounter
+	TIM16->CR1 &=~TIM_CR1_OPM;			//clear opm bit. 0=periodic timer, 1=one-shot timer
+	//or to simply zero the register
+	//TIM16->CR1 = 0;						//much easier
+
+	//clear the status register bits for capture / compare flags
+	TIM16->SR &=~(TIM_SR_CC1IF | TIM_SR_CC2IF | TIM_SR_CC3IF | TIM_SR_CC4IF | TIM_SR_UIF);
+	//disable the interrupt by clearing the enable bits
+	TIM16->DIER &=~(TIM_DIER_CC1IE | TIM_DIER_CC2IE | TIM_DIER_CC3IE | TIM_DIER_CC4IE | TIM_DIER_UIE);
+
+	//set the prescaler
+	TIM16->PSC = ps - 1;					//set the prescaler
+	TIM16->RCR = 0;						//repetition counter = 0 (=no repetition)
+	TIM16->ARR = -1;						//auto reload register / period = 0; - need to change for downcounters
+	TIM16->CNT = 0;						//reset the counter
+
+	//enable the timer.
+	TIM16->CR1 |= TIM_CR1_CEN;			//enable the timer
+}
+
+//set tim4_oc1 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim16_setpr(uint32_t pr) {
+	//save the period value
+	TIM16->ARR = pr - 1;
+
+	//clear the flag
+	//TIM16->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM16->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim16_act(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM16_IRQn);		//disable irq
+
+	_tim16_isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM16->SR &=~TIM_SR_UIF;			//clear the interrupt flag
+	TIM16->DIER |= TIM_DIER_UIE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM16_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+
+#endif
+
+#if defined(USE_TIM17)
+//initialize tim4 to use compare channels as timers
+//16-bit prescaler. 32-bit used for compatability
+void tim17_init(uint32_t ps) {
+	//route the clock to timer
+	RCC->APB2ENR |= RCC_APB2ENR_TIM17EN;
+
+	//source from internal clock -> disable slave mode
+	TIM17->SMCR &=~TIM_SMCR_SMS;			//clear sms->use internal clock
+
+	//stop the timer to configure it
+	TIM17->CR1 &=~TIM_CR1_CEN;			//clear cen. 0=disable the timer, 1=enable the timer
+	TIM17->CR1 &=~TIM_CR1_CKD;			//clear CKD0..1. 0b00->1x clock; 0b01->2:1 clock, 0b10->4:1 clk; 0b11->reserved
+	TIM17->CR1 &=~TIM_CR1_DIR;			//clear DIR bit. 0=upcounter, 1=downcounter
+	TIM17->CR1 &=~TIM_CR1_OPM;			//clear opm bit. 0=periodic timer, 1=one-shot timer
+	//or to simply zero the register
+	//TIM17->CR1 = 0;						//much easier
+
+	//clear the status register bits for capture / compare flags
+	TIM17->SR &=~(TIM_SR_CC1IF | TIM_SR_CC2IF | TIM_SR_CC3IF | TIM_SR_CC4IF | TIM_SR_UIF);
+	//disable the interrupt by clearing the enable bits
+	TIM17->DIER &=~(TIM_DIER_CC1IE | TIM_DIER_CC2IE | TIM_DIER_CC3IE | TIM_DIER_CC4IE | TIM_DIER_UIE);
+
+	//set the prescaler
+	TIM17->PSC = ps - 1;					//set the prescaler
+	TIM17->RCR = 0;						//repetition counter = 0 (=no repetition)
+	TIM17->ARR = -1;						//auto reload register / period = 0; - need to change for downcounters
+	TIM17->CNT = 0;						//reset the counter
+
+	//enable the timer.
+	TIM17->CR1 |= TIM_CR1_CEN;			//enable the timer
+}
+
+//set tim4_oc1 period
+//pr is 16-bit. 32-bit used for compatability;
+void tim17_setpr(uint32_t pr) {
+	//save the period value
+	TIM17->ARR = pr - 1;
+
+	//clear the flag
+	//TIM17->SR &=~TIM_SR_CC1IF;			//clear the interrupt flag
+	//TIM17->DIER &=~TIM_DIER_CC1IE;		//disable the isr
+}
+
+//install user handler
+void tim17_act(void (*isr_ptr)(void)) {
+	NVIC_DisableIRQ(TIM17_IRQn);		//disable irq
+
+	_tim17_isrptr = isr_ptr;			//install user handler
+
+	//clear the flag
+	TIM17->SR &=~TIM_SR_UIF;			//clear the interrupt flag
+	TIM17->DIER |= TIM_DIER_UIE;		//enable the isr
+
+	NVIC_EnableIRQ(TIM17_IRQn);		//enable irq
+	//priorities not set -> default values used.
+}
+#endif
 
 //initialize the chip
 void chip_init(void) {
@@ -1046,7 +1929,7 @@ void chip_init(void) {
 	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;		//enable clock to ADCx
 
 	//configure adc
-	ADCx->CFGR1 = 	(0x00<<26) |			//0->awd on channel 0
+	ADC1->CFGR1 = 	(0x00<<26) |			//0->awd on channel 0
 					(0<<23) |				//0->AWD disabled
 					(0<<22) |				//0->AWD on all channels (but disabled by bit 22
 					(1<<16) |				//1->enable discontinuous conversion
@@ -1062,18 +1945,18 @@ void chip_init(void) {
 					(0<<1) |				//0->DMA one shot mode selected
 					(0<<0) |				//0->DMA disabled
 					0x00;
-	ADCx->CFGR2 = 	(0x02 << 30);			//00->adc clock, 01->PCLK/2, 10->PCLK/4 -> no jitter
+	ADC1->CFGR2 = 	(0x02 << 30);			//00->adc clock, 01->PCLK/2, 10->PCLK/4 -> no jitter
 	//set adc sample time
 	//0b111->239.5 cycles for all channels
-	ADCx->SMPR = 	(ADC_SMPR << (3 * 0)) |
+	ADC1->SMPR = 	(ADC_SMPR << (3 * 0)) |
 					0x00;
 	//set adc channel sequence
 	//ADCx->SQR3 = ADCx->SQR2 = ADCx->SQR1 = 0;							//0->1 conversion
 
 	//start self-calibration
-	ADCx->CR =	0;							//reset CR
-	ADCx->CR = (1<<15);						//start the calibration
-	while (ADCx->CR & (1<<15)) continue;	//wait for ADC calibration to finish
+	ADC1->CR =	0;							//reset CR
+	ADC1->CR = (1<<15);						//start the calibration
+	while (ADC1->CR & (1<<15)) continue;	//wait for ADC calibration to finish
 	//uint32_t _adc_calfactor = ADCx->DR;				//save adc calibration factor
 
 	//optional: enable temperature sensors
@@ -1081,42 +1964,9 @@ void chip_init(void) {
 					(1ul<<22) |				//1->enable Vrefint. 1.20v nominal
 					0x00;
 
-	ADCx->CR = 	(1<<0);						//enable aden
-	while ((ADCx->ISR & (1<<0)) == 0) continue;	//wait for the adc to be ready
+	ADC1->CR = 	(1<<0);						//enable aden
+	while ((ADC1->ISR & (1<<0)) == 0) continue;	//wait for the adc to be ready
 	//now adc is calibrated
-#endif
-
-#if defined(USE_DAC)
-	//initialize the DAC
-	RCC->APB1ENR |= RCC_APB1ENR_DACEN;		//enable clock to DAC
-	DAC->CR = 	(0<<29) |					//0=DAC2 under-run interrupt disabled
-				(0<<28) |					//0->DAC2 DMA disabled
-				(0<<24) |					//0->unmask = 1
-				(0<<22) |					//0->wave generation disabled
-				(7<<19) |					//7->triggered by software
-				(1<<18) |					//1->trigge enabled for DACn
-				(0<<17) |					//0->output buffered ***enabled***
-				(1<<16) |					//0->disable DACn, 1->enable DACn
-				(0<<14) |					//0=DAC2 under-run interrupt disabled
-				(0<<13) |					//0->DAC2 DMA disabled
-				(0<< 8) |					//0->unmask = 1
-				(0<< 6) |					//0->wave generation disabled
-				(7<< 3) |					//7->triggered by software
-				(1<< 2) |					//1->trigge enabled for DACn
-				(0<< 1) |					//0->output buffered ***enabled***
-				(1<< 0) |					//0->disable DACn, 1->enable DACn
-				0x00;
-#endif
-
-#if defined(USE_EXTI)
-	//initialize exti
-	//route clock to afio
-	RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;		//enable clock to DAC
-    AFIO->EXTICR[0] = AFIO->EXTICR[1] = AFIO->EXTICR[2] = AFIO->EXTICR[3] = 0;
-    //clear all the flags
-    EXTI->PR = 0xfffffffful;        //clear the flags by writing 1 to it
-    //clear IMR
-    EXTI->IMR = 0;                  //disable all IMR
 #endif
 
 #if defined(USE_SPI1)
@@ -1234,7 +2084,7 @@ void chip_init(void) {
     //configure i2c
 #endif
 
-	//update SystemCoreClock - done in mcu_init()
+    //update SystemCoreClock - done in mcu_init()
 	//SystemCoreClockUpdate();
 
 }

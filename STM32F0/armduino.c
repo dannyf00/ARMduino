@@ -5,14 +5,14 @@
 //global variables
 //for time base off SysTick (24-bit counter)
 //volatile uint32_t timer1_millis = 0;
-volatile uint32_t timer_ticks = 1ul<<24;						//time base on Systick -> SysTick->VAL being the lowest 24-bits (SysTick is a downcounter)
+volatile uint32_t systickovf_counter = 1ul<<24;						//time base on Systick -> SysTick->VAL being the lowest 24-bits (SysTick is a downcounter)
 //static uint16_t timer1_fract = 0;
 //volatile uint32_t SystemCoreClock=16000000ul/8;				//systemcoreclock, use CMSIS' value
 
 //systick handler - to provide time base for millis()/micros()
 void SysTick_Handler(void) {
 	//clear the flag
-	timer_ticks += 1ul<<24;						//increment systick counter - 24bit, 1:1 prescaler
+	systickovf_counter += 1ul<<24;						//increment systick counter - 24bit, 1:1 prescaler
 }
 
 //user-supplied code prototype
@@ -31,9 +31,9 @@ uint32_t micros(void) {
 	
 	//use double reads
 	do {
-		m = timer_ticks;
+		m = systickovf_counter;
 		f = SysTick->VAL;		//24-bit only
-	} while (m != timer_ticks);
+	} while (m != systickovf_counter);
 	//now m and f are atomic
 	return (m - f) / clockCyclesPerMicrosecond();							//SysTick is a 24-bit downcounter
 }
@@ -46,9 +46,9 @@ uint32_t millis(void) {
 	
 	//use double reads
 	do {
-		m = timer_ticks;
+		m = systickovf_counter;
 		f = SysTick->VAL;				//24-bit only
-	} while (m != timer_ticks);
+	} while (m != systickovf_counter);
 	//not m and f are atomic
 	//return ((m + ((1ul<<24) - f)) >> 10) / clockCyclesPerMicrosecond();	//SysTick is a 24-bit downcounter
 	return (m - f) / clockCyclesPerMicrosecond() / 1000;					//SysTick is a 24-bit downcounter
@@ -61,9 +61,9 @@ uint32_t ticks(void) {
 
 	//use double reads
 	do {
-		m = timer_ticks;
+		m = systickovf_counter;
 		f = SysTick->VAL;				//24-bit only
-	} while (m != timer_ticks);
+	} while (m != systickovf_counter);
 	//not m and f are atomic
 	//return ((m + ((1ul<<24) - f)) >> 10) / clockCyclesPerMicrosecond();	//SysTick is a 24-bit downcounter
 	return (m - f);
@@ -140,7 +140,7 @@ void mcu_init(void){
 	//arm core initialization
 
 	//configure Systick as the time base for millis()/micros()
-	timer_ticks = 1ul<<24;											//SysTick is a 24-bit downcounter
+	systickovf_counter = 1ul<<24;									//SysTick is a 24-bit downcounter
 	//for chips where SysTick_Config() is not defined in cmsis
 	SysTick->LOAD  = 	(0xfffffful/*ticks*/ & SysTick_LOAD_RELOAD_Msk) - 1;      /* set reload register */
 	NVIC_SetPriority 	(SysTick_IRQn, (1<<__NVIC_PRIO_BITS) - 1);  /* set Priority for Systick Interrupt */
