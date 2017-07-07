@@ -3,3 +3,7 @@ I just ported the ARMduino to STM32F0 chips - tested on a STM32F030F4.
 So far, only the GPIO and generic Arduino functions are ported over. No hardware support for other functionalities yet - but I will add them as time goes by.
 
 the simple blinky compiles to about 2KB with optimization and 3KB without.
+
+Most functions are supported now: major exception is analogWrite().
+
+Added supported for periodic timers: TIM1/2/3/14/15/16/17. note that not all chips have t hose peripherals.
