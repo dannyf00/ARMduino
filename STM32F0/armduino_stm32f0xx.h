@@ -46,7 +46,7 @@
 //#define USE_PWM2							//comment out if not used - tmr2 pwm
 //#define USE_PWM3							//comment out if not used - tmr3 pwm
 //#define USE_PWM4							//comment out if not used - tmr4 pwm
-//#define USE_ADC1							//comment out if not used
+#define USE_ADC1							//comment out if not used
 //#define USE_SPI1							//comment out if not used
 //#define USE_SPI2							//comment out if not used
 //#define USE_I2C1							//comment out if not used
@@ -93,13 +93,20 @@ typedef enum {
 
 typedef enum {
 	A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15,
-	AVREFINT,									//AIN16 = Vrefint
-	ATEMP,										//AIN17 = temperature sensor
+	ATEMP,										//AIN16 = temperature sensor
+	AVREFINT,									//AIN17 = Vrefint
 } AIN_TypeDef;
 
+//VREFINT calibration values @3.3v VDDA, 1.2v nominal
+#define VREFINT_CAL			((*(uint16_t *) 0x1ffff7ba) & 0x0fff)
+#define Vref2Vdda()			(3300ul * VREFINT_CAL / analogRead(AVREFINT))				//convert adc readings of Vref to Vdda, in mv
+#define ADC2mv(adc)			((3300ul * (adc)) >> 12)					//convert 12bit adc to mv, assuming Vdda=3300mv (can be replaced by Vref2Vdda)
+#define ADC2mv2(Vdda, adc)	(((Vdda) * (adc)) >> 12)					//convert 12bit adc to mv, given Vdda (can be replaced by Vref2Vdda)
 //convert temperature sensor adc reading into temperature x100
-//follow the datasheet. 3.3v Vref (3.0v for my board), 12bit adc
-#define Tx10(adc)		(14300/43*10+250 - ((33000ul*10/43 * (adc)) >> 12))
+#define TS_CAL1				((*(uint16_t *) 0x1ffff7b8) & 0x0fff)		//calibrated Temperature sensor reading at 3.3v VDDA and 30c
+#define TS_CAL2				((*(uint16_t *) 0x1ffff7c2) & 0x0fff)		//calibrated Temperature sensor reading at 3.3v VDDA and 110c
+//follow the datasheet. 3.3v Vref (3.26v for my board), 12bit adc
+#define Tx10(adc)			((300l + (1100l - 300l) * (TS_CAL1 - (adc))  / (TS_CAL1 - TS_CAL2)))
 
 //MODE:
 //Output modes: GPIOMODE_OUTPP, GPIOMODE_OUTOD
@@ -248,6 +255,24 @@ void tim16_setpr(uint32_t pr); void tim16_act(void (*isr_ptr)(void));
 
 void tim17_init(uint32_t ps);
 void tim17_setpr(uint32_t pr); void tim17_act(void (*isr_ptr)(void));
+
+//clock mgmt
+void SystemCoreClock2HSI(void);					//clock = 8Mhz
+void SystemCoreClock2HSIPLL(uint32_t mul);		//clock = 8Mhz / 2 * mul
+void SystemCoreClock2HSE(void);					//clock = HSE_Value
+void SystemCoreClock2HSEPLL(uint32_t mul);		//clock = HSE_Value / divider * mul
+#define SystemCoreClock2HSI_8Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL2)
+#define SystemCoreClock2HSI_12Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL3)
+#define SystemCoreClock2HSI_16Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL4)
+#define SystemCoreClock2HSI_20Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL5)
+#define SystemCoreClock2HSI_24Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL6)
+#define SystemCoreClock2HSI_28Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL7)
+#define SystemCoreClock2HSI_32Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL8)
+#define SystemCoreClock2HSI_36Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL9)
+#define SystemCoreClock2HSI_40Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL10)
+#define SystemCoreClock2HSI_44Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL11)
+#define SystemCoreClock2HSI_48Mhz()		SystemCoreClock2HSIPLL(RCC_CFGR_PLLMULL12)
+
 
 //initialize the chip
 void chip_init(void);

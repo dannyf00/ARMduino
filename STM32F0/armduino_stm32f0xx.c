@@ -1773,10 +1773,132 @@ void tim17_act(void (*isr_ptr)(void)) {
 }
 #endif
 
+//clock mgmt
+//switch clock to HSI
+//reset clock to its default state
+void SystemCoreClock2HSI(void) {
+    // FLASH prefetch = on, wait state to 1
+    FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY;
+
+#if 1
+    /* Set HSION bit */
+    RCC->CR |= (uint32_t)0x00000001;
+
+  #if defined (STM32F051)
+    /* Reset SW[1:0], HPRE[3:0], PPRE[2:0] and MCOSEL[2:0] bits */
+    RCC->CFGR &= (uint32_t)0xF8FFB80C;
+  #else
+    /* Reset SW[1:0], HPRE[3:0], PPRE[2:0], ADCPRE, MCOSEL[2:0], MCOPRE[2:0] and PLLNODIV bits */
+    RCC->CFGR &= (uint32_t)0x08FFB80C;
+  #endif /* STM32F051 */
+
+    /* Reset HSEON, CSSON and PLLON bits */
+    RCC->CR &= (uint32_t)0xFEF6FFFF;
+
+    /* Reset HSEBYP bit */
+    RCC->CR &= (uint32_t)0xFFFBFFFF;
+
+    /* Reset PLLSRC, PLLXTPRE and PLLMUL[3:0] bits */
+    RCC->CFGR &= (uint32_t)0xFFC0FFFF;
+
+    /* Reset PREDIV1[3:0] bits */
+    RCC->CFGR2 &= (uint32_t)0xFFFFFFF0;
+
+    /* Reset USARTSW[1:0], I2CSW, CECSW and ADCSW bits */
+    RCC->CFGR3 &= (uint32_t)0xFFFFFEAC;
+
+    /* Reset HSI14 bit */
+    RCC->CR2 &= (uint32_t)0xFFFFFFFE;
+
+    /* Disable all interrupts */
+    RCC->CIR = 0x00000000;
+#else
+    // PLL input = HSI/2 = 4MHz, PLL Mult = 12X
+    //RCC->CFGR = mul & RCC_CFGR_PLLMULL;	//RCC_CFGR_PLLMUL12;
+   	RCC->CR |= RCC_CR_HSION;
+
+   	// Wait for HSI ready
+    while(!(RCC->CR & RCC_CR_HSIRDY)) continue;
+
+    // Switch to HSI as clock source
+    RCC->CFGR |= RCC_CFGR_SW_HSI;
+
+    // wait for clock switching
+    while((RCC->CFGR & RCC_CFGR_SWS)!= RCC_CFGR_SWS_HSI) continue;
+#endif
+}
+
+//switch clock to HSE
+void SystemCoreClock2HSE(void) {
+    // FLASH prefetch = on, wait state to 1
+    FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY;
+
+    // PLL input = HSI/2 = 4MHz, PLL Mult = 12X
+    //RCC->CFGR = mul & RCC_CFGR_PLLMULL;	//RCC_CFGR_PLLMUL12;
+   	RCC->CR |= RCC_CR_HSEON;
+
+   	// Wait for HSE ready
+   	while(!(RCC->CR & RCC_CR_HSERDY)) continue;
+
+   	// Switch to HSE as clock source
+   	RCC->CFGR |= RCC_CFGR_SW_HSE;
+
+   	// wait for clock switching
+   	while((RCC->CFGR & RCC_CFGR_SWS)!= RCC_CFGR_SWS_HSE) continue;
+}
+
+//to switch clocks, switch to SystemCoreClock2HSI() first (default state)
+//switch to HSIxPLL
+void SystemCoreClock2HSIPLL(uint32_t mul) {
+    // FLASH prefetch = on, wait state to 1
+    FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY;
+
+    // PLL input = HSI/2 = 4MHz, PLL Mult = 12X
+    RCC->CFGR|= RCC_CFGR_PLLSRC_HSI_Div2;	//select HSI as PLL source
+    RCC->CFGR = (RCC->CFGR &~RCC_CFGR_PLLMULL) | (mul & RCC_CFGR_PLLMULL);	//RCC_CFGR_PLLMUL12;
+    //RCC->CFGR2= (RCC->CFGR2&~RCC_CFGR2_PREDIV1)| (mul_div & RCC_CFGR2_PREDIV1);	//set divider
+    RCC->CR |= RCC_CR_PLLON;
+
+    // Wait for PLL ready
+    while(!(RCC->CR & RCC_CR_PLLRDY)) continue;
+
+    // Switch to PLL as clock source
+    RCC->CFGR |= RCC_CFGR_SW_PLL;
+
+    // wait for clock switching
+    while((RCC->CFGR & RCC_CFGR_SWS)!= RCC_CFGR_SWS_PLL) continue;
+}
+
+//switch to HSExPLL
+void SystemCoreClock2HSEPLL(uint32_t mul_div) {
+    // FLASH prefetch = on, wait state to 1
+    FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY;
+
+    // PLL input = HSE = 4MHz, PLL Mult = 12X
+    RCC->CFGR&=~RCC_CFGR_PLLSRC_HSI_Div2;	//select HSE as PLL source
+    RCC->CFGR = (RCC->CFGR &~RCC_CFGR_PLLMULL) | (mul_div & RCC_CFGR_PLLMULL);	//RCC_CFGR_PLLMUL12;
+    RCC->CFGR2= (RCC->CFGR2&~RCC_CFGR2_PREDIV1)| (mul_div & RCC_CFGR2_PREDIV1);	//set divider
+    RCC->CR |= RCC_CR_PLLON;
+
+    // Wait for PLL ready
+    while(!(RCC->CR & RCC_CR_PLLRDY)) continue;
+
+    // Switch to PLL as clock source
+    RCC->CFGR |= RCC_CFGR_SW_PLL;
+
+    // wait for clock switching
+    while((RCC->CFGR & RCC_CFGR_SWS)!= RCC_CFGR_SWS_PLL) continue;
+}
+
+
 //initialize the chip
 void chip_init(void) {
 	//select the clock source
 	//or use default clock
+	//SystemCoreClock2HSI_16Mhz(); SystemCoreClock2HSI();
+	//SystemCoreClock2HSI(); SystemCoreClock2HSI_48Mhz();
+	//SystemCoreClock2HSI(); SystemCoreClock2HSI_24Mhz();
+	SystemCoreClock2HSI();						//default clock = 8Mhz
 
 	//enable clock to GPIO
 	RCC->AHBENR |=
