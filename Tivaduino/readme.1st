@@ -1,0 +1,109 @@
+Arduino for LM4F120 / TM4C chips from TI
+
+Tivaduino is a port of the popular Arduino code to TI's TM4C MCUs - Cortex-M4F chips. The code was tested on TI's LM4F120 Launchpad (LM4F120H5QR, later renamed TM4C1233H6PM).
+
+Software environment: IDE: CCS6 Compiler: 15 LTS Tivware: 2.1.14 CMSIS: not applicable
+
+The following functions / APIs are implemented:
+
+Constants: GPIO pin: PA0..PA7, PB0..PB7, PC0..PC7, PD0..PD7, PE0..PE7, PF0..PF7, PG0..PG7, PH0..PH7, as implemented on the chip PWM pin: Analog input pin: A0..A11, ATEMP (temperature sensor) pin level: HIGH/LOW mode: INPUT, OUTPUT, INPUT_PULLUP analog reference: DEFAULT, INTERNAL for internal 3v bandgap, EXTERNAL for external 3v.
+
+GPIO: pinMode(pin, mode): set data direction.
+
+digitalWrite(pin, level): set pin level (HIGH/LOW)
+
+digitalRead(pin): return pin level (HIGH/LOW)
+
+Analog IO: analogRead0() and analogRead1(): reading analog signals using ADC0 and ADC1 modules, respectively
+
+analogWrite(): write user specified PWM signal to a pin. Upto 16-bit resolution, 27 pins and 24 independent channels. 32-bit PWM possible but not implemented.
+
+analogReference0() and analogReference1(): setting 3v analog reference. Default is internal 3v bandgap reference.
+
+Advanced IO: tone()/noTone(): not implemented. Potentially you can repurpose the PWM modules for that
+
+shiftOut() / shiftIn(): implemented
+
+pulseIn(): implemented
+
+Time:
+
+millis(): implemented. Maximum duration is 2^32 / F_CPU, in second.
+
+micros(): implemented. Maximum duration is 2^32 / F_CPU, in second.
+
+ticks(): timer ticks. Maximum of 2^32 ticks.
+
+delay(): implemented. Maximum duration is 2^32 / F_CPU, in second.
+
+delayMicroseconds(): implemented.
+
+Math:
+
+all implemented.
+
+Trigonometry:
+
+all implemented.
+
+Characters:
+
+all implemented.
+
+Random Numbers:
+
+RandomSeed(): implemented.
+
+Random(): implemented.
+
+Random2(min, max): bound generated random numbers to min and max
+
+Bits and Bytse:
+
+all implemented.
+
+External Interrupts:
+
+attachInterrupt(): implemented
+
+detachInterrupt(): implemented
+
+Interrupts:
+
+interrupts(): implemented
+
+noInterrupts(): implemented
+
+Serial communications: on all 12 UARTs (numbered 0..11 inclusive)
+
+serial communications are interrupt driven, non-blocking. As such, you have to test for UARTn availability before transmitting on that UART
+
+serialnBegin(): initialize UARTn
+
+serialnWrite(): write a char on UARTn
+
+serialnRead(): read a char from UARTn. Non-interrupt driven
+
+serialnPrint(): print a string on UARTn
+
+serialnPrintln(): print a string on UARTn, with return
+
+serialnAvailable(): return the number of chars in the UARTn buffer
+
+serialnBusy(): test if UARTn is busy
+
+SPI: to be implemented
+
+I2C: to be implemented
+
+DAC: not available.
+
+Code portability: it should be fairly easy to port the code to other TM4C or even LM3S chips (with Stellaris driverlib), with minor changes.
+
+Key implementation differences:
+
+Tivaduino uses multiple user-defined switches, USE_XXX where XXX is a peripheral to configure the module at compile time. So if ADC0 is used, you should define USE_ADC0. Commenting out that switch / macro will disable all ADC0-related functionality, including analogRead0() for example.
+Tivaduino allows the user to specify some parameters, like PWM resolution bits, ADC prescaler, etc. They are defined in arduino_lm4f120.h file.
+Tivaduino defaults to 20Mhz operation. That can be changed by the user in the chip_init() call, in arduino_lm4f120.c file.
+millis() and micros() are now implemented using ticks(), to avoid the undercounting issue associated with the Arduino implementation. ticks() does not turn off interrupts and its return values are atomic.
+Those timing functions rely on SysTick() and any changes to SysTick functionality will impact the timing accuracy / consistency.
