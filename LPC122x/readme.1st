@@ -1,0 +1,3 @@
+ARMduino implementation on LPC122x, tested on LPC1227.
+
+Most Arduino functions are implemented, except analogRead() / analogWrite(), attachInterrupt() / detachInterrupt() and serial comms: they are commented out of the port from STM32F versions.
